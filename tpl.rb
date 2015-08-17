@@ -112,8 +112,8 @@ require 'webmock/rspec'
   inside "spec/support" do
     copy_file "api_helper.rb"
     copy_file "stub_helper.rb"
-  end
-    
+  end  
+
 ################### devise
 
   run "rails generate devise:install"
@@ -159,9 +159,13 @@ require 'webmock/rspec'
   inside "app/models" do 
     remove_file "user.rb"
     copy_file "user.rb"
+    copy_file "social_account.rb"
     copy_file "concerns/doorkeeper_resource_owner_password_credentials_flow.rb"
     copy_file "concerns/social_auth.rb"
   end
+  
+  generate :migration, "create_social_accounts user:references provider:string uid:string token:string email:string data:json"
+  generate :migration, "add_timestamps_to_social_accounts created_at:datetime updated_at:datetime"
 
   inside "app/controllers" do
     copy_file "lock_controller.rb"
@@ -176,6 +180,16 @@ require 'webmock/rspec'
   end
   route "post 'tokens/social', to: 'tokens#social'"
   route "resource 'profile', only: :show, controller: 'profile'"
+
+  inside "spec/api" do
+    copy_file "auth_request.rb"
+    copy_file "profile_request.rb"
+  end
+  
+  inside "spec/factories" do
+    copy_file "user.rb"
+    copy_file "social_account.rb"
+  end
 
 ################## swagger api-docs
 
