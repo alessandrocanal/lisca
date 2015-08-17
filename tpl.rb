@@ -81,6 +81,10 @@ end
 
 run "cp config/database.yml.example config/database.yml"
 
+################### devise
+
+
+  
 ############################################
 after_bundle do
   remove_dir "test"
@@ -91,11 +95,37 @@ after_bundle do
 
   gsub_file 'app/controllers/application_controller.rb', /protect_from_forgery with: :exception/, '#protect_from_forgery with: :exception'
 
-################## rails generate
+################## rspec
 
   run "spring stop"
   generate "rspec:install"
   run "bundle binstubs rspec-core"
+
+################### doorkeeper
+
+run "rails generate doorkeeper:install"
+
+comment_lines "config/initializers/doorkeeper.rb", 
+  /fail "Please configure doorkeeper resource_owner_authenticator block located in/
+  
+insert_into_file "config/initializers/doorkeeper.rb", 
+  "    current_user || warder.authenticate!(scope: :user)\n",
+  after: "resource_owner_authenticator do\n"
+
+insert_into_file "config/initializers/doorkeeper.rb", 
+  before: "\n  resource_owner_authenticator do\n" do <<-RUBY
+
+  #https://github.com/doorkeeper-gem/doorkeeper/wiki/Using-Resource-Owner-Password-Credentials-flow
+  resource_owner_from_credentials do |routes|
+    User.enter(params)
+  end  
+  RUBY
+  end
+
+append_to_file "config/initializers/doorkeeper.rb", 
+  "\nDoorkeeper.configuration.token_grant_types << 'password'"
+
+generate(:doorkeeper, "migration")
 
 ################## Health Check route
   generate(:controller, "health index")
