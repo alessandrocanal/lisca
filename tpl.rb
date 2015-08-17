@@ -96,8 +96,8 @@ after_bundle do
   insert_into_file "spec/rails_helper.rb", 
     after: "# Add additional requires below this line. Rails is not loaded until this point!" do <<-RUBY
 
-  Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f }
-  require 'webmock/rspec'
+Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f }
+require 'webmock/rspec'
     RUBY
     end
 
@@ -109,10 +109,15 @@ after_bundle do
   RUBY
     end
     
+  inside "spec/support" do
+    copy_file "api_helper.rb"
+    copy_file "stub_helper.rb"
+  end
+    
 ################### devise
 
-run "rails generate devise:install"
-run "rails generate devise User"
+  run "rails generate devise:install"
+  run "rails generate devise User"
 
 ################### doorkeeper
 
