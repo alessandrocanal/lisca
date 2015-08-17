@@ -93,10 +93,26 @@ after_bundle do
 
 ################## rspec
 
-  run "spring stop"
-  generate "rspec:install"
-  run "bundle binstubs rspec-core"
+run "spring stop"
+generate "rspec:install"
+run "bundle binstubs rspec-core"
 
+insert_into_file "spec/rails_helper.rb", 
+  after: "# Add additional requires below this line. Rails is not loaded until this point!" do <<-RUBY
+
+Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f }
+require 'webmock/rspec'
+  RUBY
+  end
+
+insert_into_file "spec/rails_helper.rb", 
+  after: "config.infer_spec_type_from_file_location!" do <<-RUBY
+  
+  config.include Helpers
+  WebMock.disable_net_connect!(allow_localhost: true)
+  RUBY
+  end
+  
 ################### devise
 
 run "rails generate devise:install"
@@ -171,6 +187,10 @@ inside "app/controllers" do
 end
 
 route "get 'ping', to: 'ping#index'"
+
+inside "spec/api" do
+  copy_file "ping_request.rb"
+end
 
 ################## home api
 
