@@ -130,7 +130,7 @@ inside 'config/initializers' do
 
 end
 
-gsub_file "config/routes.rb", "use_doorkeeper" do <<-EOF
+gsub_file "config/routes.rb", "  use_doorkeeper" do <<-EOF
   use_doorkeeper do
     skip_controllers :applications, :authorized_applications, :authorizations
   end
@@ -153,9 +153,40 @@ inside "app/controllers" do
   copy_file "users/registrations_controller.rb"
 end
 
-################## Health Check route
-  generate(:controller, "health index")
-  route "root to: 'health#index'"
+gsub_file "config/routes.rb", "  devise_for :users" do <<-EOF
+  devise_for :users, controllers: { registrations: 'users/registrations' }
+EOF
+end
+route "post 'tokens/social', to: 'tokens#social'"
+route "resource 'profile', only: :show, controller: 'profile'"
+
+################## swagger api-docs
+
+route "mount SwaggerEngine::Engine, at: '/api-docs'"
+
+################## ping api
+
+inside "app/controllers" do
+  copy_file "ping_controller.rb"
+end
+
+route "get 'ping', to: 'ping#index'"
+
+################## home api
+
+inside "app/controllers" do
+  copy_file "home_controller.rb"
+end
+
+inside "app/views" do
+  copy_file "home/index.html.erb"
+  copy_file "home/fb.html.erb"
+end
+
+route "get 'home/fb', to: 'home#fb'"
+route "root 'home#index'"
+
+gsub_file("config/routes.rb", /^\s*#.*\n/, '')
 
 ################## git
   git :init
