@@ -9,7 +9,8 @@
 # to look up files
 def source_paths
   Array(super) + 
-    [File.expand_path(File.dirname(__FILE__))]
+#    [File.expand_path(File.dirname(__FILE__))]
+    [File.join(File.expand_path(File.dirname(__FILE__)),'files')]
 end
 
 ##################### Gemfile
@@ -49,8 +50,7 @@ insert_into_file(".gitignore", "/config/database.yml\n", after: "/tmp\n")
 
 ################### config/database.yml
 
-inside 'config' do
-  create_file 'database.yml.example' do <<-EOF
+config_database = <<EOF
 default: &default
   adapter: postgresql
   host: localhost
@@ -64,9 +64,6 @@ development:
   <<: *default
   database: #{app_name}_development
 
-# Warning: The database defined as "test" will be erased and
-# re-generated from your development database when you run "rake".
-# Do not set this db to the same as development or production.
 test:
   <<: *default
   database: #{app_name}_test
@@ -74,22 +71,21 @@ test:
 production:
   <<: *default
   database: #{app_name}_production
-
 EOF
-  end
+
+inside 'config' do
+  create_file "database.yml.example", config_database
+  remove_file "database.yml"
+  create_file "database.yml", config_database
 end
-
-run "cp config/database.yml.example config/database.yml"
-
-################### devise
-
-
   
 ############################################
 after_bundle do
   remove_dir "test"
   
 ################### config/application.rb
+  remove_file "app/controllers/application.rb"
+  copy_file "app/controllers/application.rb"
 
 ################### application_controller.rb
 
@@ -104,28 +100,58 @@ after_bundle do
 ################### doorkeeper
 
 run "rails generate doorkeeper:install"
+run "rails generate doorkeeper:migration"
 
-comment_lines "config/initializers/doorkeeper.rb", 
-  /fail "Please configure doorkeeper resource_owner_authenticator block located in/
-  
-insert_into_file "config/initializers/doorkeeper.rb", 
-  "    current_user || warder.authenticate!(scope: :user)\n",
-  after: "resource_owner_authenticator do\n"
+inside 'config/initializers' do
+  comment_lines "doorkeeper.rb", 
+    /fail "Please configure doorkeeper resource_owner_authenticator block located in/
+    
+  insert_into_file "doorkeeper.rb", 
+    "    current_user || warder.authenticate!(scope: :user)\n",
+    after: "resource_owner_authenticator do\n"
 
-insert_into_file "config/initializers/doorkeeper.rb", 
-  before: "\n  resource_owner_authenticator do\n" do <<-RUBY
+  insert_into_file "doorkeeper.rb", 
+    before: "\n  resource_owner_authenticator do\n" do <<-RUBY
 
-  #https://github.com/doorkeeper-gem/doorkeeper/wiki/Using-Resource-Owner-Password-Credentials-flow
-  resource_owner_from_credentials do |routes|
-    User.enter(params)
-  end  
-  RUBY
-  end
+    #https://github.com/doorkeeper-gem/doorkeeper/wiki/Using-Resource-Owner-Password-Credentials-flow
+    resource_owner_from_credentials do |routes|
+      User.enter(params)
+    end  
+    RUBY
+    end
 
-append_to_file "config/initializers/doorkeeper.rb", 
-  "\nDoorkeeper.configuration.token_grant_types << 'password'"
+  append_to_file "doorkeeper.rb", 
+    "\nDoorkeeper.configuration.token_grant_types << 'password'"
 
+end
 generate(:doorkeeper, "migration")
+gsub_file "config/routes.rb", "use_doorkeeper" do <<-EOF
+  use_doorkeeper do
+    skip_controllers :applications, :authorized_applications, :authorizations
+  end
+EOF
+end
+
+################### devise
+
+run "rails generate devise:install"
+run "rails generate devise User"
+
+################### devise and doorkeeper integration
+
+inside "app/models" do 
+  remove_file "user.rb"
+  copy_file "user.rb"
+  copy_file "concerns/doorkeeper_resource_owner_password_credentials_flow.rb"
+  copy_file "concerns/social_auth.rb"
+end
+
+inside "app/controllers" do
+  copy_file "lock_controller.rb"
+  copy_file "profile_controller.rb"
+  copy_file "tokens_controller.rb"
+  copy_file "users/registration_controller.rb"
+end
 
 ################## Health Check route
   generate(:controller, "health index")
