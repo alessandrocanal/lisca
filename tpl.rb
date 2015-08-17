@@ -83,36 +83,32 @@ end
 after_bundle do
   remove_dir "test"
   
-################### config/application.rb
-  remove_file "app/controllers/application.rb"
-  copy_file "app/controllers/application.rb"
-
 ################### application_controller.rb
-
-  gsub_file 'app/controllers/application_controller.rb', /protect_from_forgery with: :exception/, '#protect_from_forgery with: :exception'
+  remove_file "app/controllers/application_controller.rb"
+  copy_file "app/controllers/application_controller.rb"
 
 ################## rspec
 
-#run "spring stop"
-generate "rspec:install"
-run "bundle binstubs rspec-core"
+  run "spring stop"
+  generate "rspec:install"
+  run "bundle binstubs rspec-core"
 
-insert_into_file "spec/rails_helper.rb", 
-  after: "# Add additional requires below this line. Rails is not loaded until this point!" do <<-RUBY
+  insert_into_file "spec/rails_helper.rb", 
+    after: "# Add additional requires below this line. Rails is not loaded until this point!" do <<-RUBY
 
-Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f }
-require 'webmock/rspec'
-  RUBY
-  end
+  Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f }
+  require 'webmock/rspec'
+    RUBY
+    end
 
-insert_into_file "spec/rails_helper.rb", 
-  after: "config.infer_spec_type_from_file_location!" do <<-RUBY
-  
+  insert_into_file "spec/rails_helper.rb", 
+    after: "config.infer_spec_type_from_file_location!" do <<-RUBY
+    
   config.include Helpers
   WebMock.disable_net_connect!(allow_localhost: true)
   RUBY
-  end
-  
+    end
+    
 ################### devise
 
 run "rails generate devise:install"
@@ -120,93 +116,93 @@ run "rails generate devise User"
 
 ################### doorkeeper
 
-run "rails generate doorkeeper:install"
-run "rails generate doorkeeper:migration"
+  run "rails generate doorkeeper:install"
+  run "rails generate doorkeeper:migration"
 
-inside 'config/initializers' do
-  comment_lines "doorkeeper.rb", 
-    /fail "Please configure doorkeeper resource_owner_authenticator block located in/
-    
-  insert_into_file "doorkeeper.rb", 
-    "    current_user || warder.authenticate!(scope: :user)\n",
-    after: "resource_owner_authenticator do\n"
+  inside 'config/initializers' do
+    comment_lines "doorkeeper.rb", 
+      /fail "Please configure doorkeeper resource_owner_authenticator block located in/
+      
+    insert_into_file "doorkeeper.rb", 
+      "    current_user || warder.authenticate!(scope: :user)\n",
+      after: "resource_owner_authenticator do\n"
 
-  insert_into_file "doorkeeper.rb", 
-    before: "\n  resource_owner_authenticator do\n" do <<-RUBY
+    insert_into_file "doorkeeper.rb", 
+      before: "\n  resource_owner_authenticator do\n" do <<-RUBY
 
-    #https://github.com/doorkeeper-gem/doorkeeper/wiki/Using-Resource-Owner-Password-Credentials-flow
-    resource_owner_from_credentials do |routes|
-      User.enter(params)
-    end  
-    RUBY
-    end
+      #https://github.com/doorkeeper-gem/doorkeeper/wiki/Using-Resource-Owner-Password-Credentials-flow
+      resource_owner_from_credentials do |routes|
+        User.enter(params)
+      end  
+      RUBY
+      end
 
-  append_to_file "doorkeeper.rb", 
-    "\nDoorkeeper.configuration.token_grant_types << 'password'"
+    append_to_file "doorkeeper.rb", 
+      "\nDoorkeeper.configuration.token_grant_types << 'password'"
 
-end
+  end
 
-gsub_file "config/routes.rb", "  use_doorkeeper" do <<-EOF
+  gsub_file "config/routes.rb", "  use_doorkeeper" do <<-EOF
   use_doorkeeper do
     skip_controllers :applications, :authorized_applications, :authorizations
   end
-EOF
-end
+  EOF
+  end
 
 ################### devise and doorkeeper integration
 
-inside "app/models" do 
-  remove_file "user.rb"
-  copy_file "user.rb"
-  copy_file "concerns/doorkeeper_resource_owner_password_credentials_flow.rb"
-  copy_file "concerns/social_auth.rb"
-end
+  inside "app/models" do 
+    remove_file "user.rb"
+    copy_file "user.rb"
+    copy_file "concerns/doorkeeper_resource_owner_password_credentials_flow.rb"
+    copy_file "concerns/social_auth.rb"
+  end
 
-inside "app/controllers" do
-  copy_file "lock_controller.rb"
-  copy_file "profile_controller.rb"
-  copy_file "tokens_controller.rb"
-  copy_file "users/registrations_controller.rb"
-end
+  inside "app/controllers" do
+    copy_file "lock_controller.rb"
+    copy_file "profile_controller.rb"
+    copy_file "tokens_controller.rb"
+    copy_file "users/registrations_controller.rb"
+  end
 
-gsub_file "config/routes.rb", "  devise_for :users" do <<-EOF
-  devise_for :users, controllers: { registrations: 'users/registrations' }
-EOF
-end
-route "post 'tokens/social', to: 'tokens#social'"
-route "resource 'profile', only: :show, controller: 'profile'"
+  gsub_file "config/routes.rb", "  devise_for :users" do <<-EOF
+    devise_for :users, controllers: { registrations: 'users/registrations' }
+  EOF
+  end
+  route "post 'tokens/social', to: 'tokens#social'"
+  route "resource 'profile', only: :show, controller: 'profile'"
 
 ################## swagger api-docs
 
-route "mount SwaggerEngine::Engine, at: '/api-docs'"
+  route "mount SwaggerEngine::Engine, at: '/api-docs'"
 
 ################## ping api
 
-inside "app/controllers" do
-  copy_file "ping_controller.rb"
-end
+  inside "app/controllers" do
+    copy_file "ping_controller.rb"
+  end
 
-route "get 'ping', to: 'ping#index'"
+  route "get 'ping', to: 'ping#index'"
 
-inside "spec/api" do
-  copy_file "ping_request.rb"
-end
+  inside "spec/api" do
+    copy_file "ping_request.rb"
+  end
 
 ################## home api
 
-inside "app/controllers" do
-  copy_file "home_controller.rb"
-end
+  inside "app/controllers" do
+    copy_file "home_controller.rb"
+  end
 
-inside "app/views" do
-  copy_file "home/index.html.erb"
-  copy_file "home/fb.html.erb"
-end
+  inside "app/views" do
+    copy_file "home/index.html.erb"
+    copy_file "home/fb.html.erb"
+  end
 
-route "get 'home/fb', to: 'home#fb'"
-route "root 'home#index'"
+  route "get 'home/fb', to: 'home#fb'"
+  route "root 'home#index'"
 
-gsub_file("config/routes.rb", /^\s*#.*\n/, '')
+  gsub_file("config/routes.rb", /^\s*#.*\n/, '')
 
 ################## git
   git :init
