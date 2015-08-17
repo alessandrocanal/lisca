@@ -93,7 +93,7 @@ after_bundle do
 
 ################## rspec
 
-run "spring stop"
+#run "spring stop"
 generate "rspec:install"
 run "bundle binstubs rspec-core"
 
