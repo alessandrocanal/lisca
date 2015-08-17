@@ -97,6 +97,11 @@ after_bundle do
   generate "rspec:install"
   run "bundle binstubs rspec-core"
 
+################### devise
+
+run "rails generate devise:install"
+run "rails generate devise User"
+
 ################### doorkeeper
 
 run "rails generate doorkeeper:install"
@@ -124,18 +129,13 @@ inside 'config/initializers' do
     "\nDoorkeeper.configuration.token_grant_types << 'password'"
 
 end
-generate(:doorkeeper, "migration")
+
 gsub_file "config/routes.rb", "use_doorkeeper" do <<-EOF
   use_doorkeeper do
     skip_controllers :applications, :authorized_applications, :authorizations
   end
 EOF
 end
-
-################### devise
-
-run "rails generate devise:install"
-run "rails generate devise User"
 
 ################### devise and doorkeeper integration
 
@@ -150,7 +150,7 @@ inside "app/controllers" do
   copy_file "lock_controller.rb"
   copy_file "profile_controller.rb"
   copy_file "tokens_controller.rb"
-  copy_file "users/registration_controller.rb"
+  copy_file "users/registrations_controller.rb"
 end
 
 ################## Health Check route
