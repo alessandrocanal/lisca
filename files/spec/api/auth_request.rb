@@ -55,7 +55,6 @@ describe "api auth", type: :request do
         expect(r.has_key?("access_token")).to eq(true)
         expect(r.has_key?("token_type")).to eq(true)
         expect(r.has_key?("expires_in")).to eq(true)
-        expect(r.has_key?("refresh_token")).to eq(true)
         expect(r.has_key?("created_at")).to eq(true)
 
         expect(r["access_token"]).to eq(expected_token)
@@ -128,7 +127,6 @@ describe "api auth", type: :request do
           expect(r.has_key?("access_token")).to eq(true)
           expect(r.has_key?("token_type")).to eq(true)
           expect(r.has_key?("expires_in")).to eq(true)
-          expect(r.has_key?("refresh_token")).to eq(true)
           expect(r.has_key?("created_at")).to eq(true)
 
           expect(r["access_token"]).to eq(expected_token)
@@ -162,7 +160,6 @@ describe "api auth", type: :request do
           expect(r.has_key?("access_token")).to eq(true)
           expect(r.has_key?("token_type")).to eq(true)
           expect(r.has_key?("expires_in")).to eq(true)
-          expect(r.has_key?("refresh_token")).to eq(true)
           expect(r.has_key?("created_at")).to eq(true)
 
           expect(r["access_token"]).to eq(expected_token)

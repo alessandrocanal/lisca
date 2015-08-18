@@ -26,6 +26,7 @@ gem 'sass-rails', '~> 5.0'
 gem 'uglifier', '>= 1.3.0'
 gem 'jquery-rails'
 gem 'jbuilder', '~> 2.0'
+gem 'quiet_assets', group: :development
 
 gem_group :development, :test do
   gem 'spring'
@@ -39,7 +40,7 @@ end
 gem 'factory_girl_rails'
 gem 'doorkeeper', '~> 3.0.0'
 gem 'devise'
-gem 'swagger_engine'
+gem 'swagger_engine', git: "https://github.com/batdevis/swagger_engine.git"
 gem 'faker'
 gem 'koala'
 
@@ -175,11 +176,11 @@ require 'webmock/rspec'
   end
 
   gsub_file "config/routes.rb", "  devise_for :users" do <<-EOF
-    devise_for :users, controllers: { registrations: 'users/registrations' }
+  devise_for :users, controllers: { registrations: 'users/registrations' }
   EOF
   end
-  route "post 'tokens/social', to: 'tokens#social'"
-  route "resource 'profile', only: :show, controller: 'profile'"
+  route "post 'tokens/social', to: 'tokens#social', defaults: { format: 'json' }"
+  route "resource 'profile', only: :show, controller: 'profile', defaults: { format: 'json' }"
 
   inside "spec/api" do
     copy_file "auth_request.rb"
@@ -201,7 +202,7 @@ require 'webmock/rspec'
     copy_file "ping_controller.rb"
   end
 
-  route "get 'ping', to: 'ping#index'"
+  route "get 'ping', to: 'ping#index', defaults: { format: 'json' }"
 
   inside "spec/api" do
     copy_file "ping_request.rb"
