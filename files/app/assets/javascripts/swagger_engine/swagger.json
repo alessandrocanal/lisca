@@ -152,15 +152,11 @@
             "type": "object",
             "required": [
                 "email",
-                "nickname",
                 "password",
                 "password_confirmation"
             ],
             "properties": {
                 "email": {
-                    "type": "string"
-                },
-                "nickname": {
                     "type": "string"
                 },
                 "password": {
@@ -172,7 +168,6 @@
             },
             "example": {
                 "email": "user@here.local",
-                "nickname": "useruno",
                 "password": "0123456789",
                 "password_confirmation": "0123456789"
             }
@@ -330,20 +325,15 @@
             "description": "profile info",
             "schema": {
                 "properties": {
-                    "nickname": {
-                        "type": "string"
-                    },
                     "email": {
                         "type": "string"
                     }
                 },
                 "required": [
-                    "nickname",
                     "email"
                 ],
                 "example": {
                     "application/json": {
-                        "nickname": "useruno",
                         "email": "useruno@here.local"
                     }
                 }
