@@ -132,8 +132,14 @@ copy_file "app/assets/javascripts/application.js"
 
 ################### application_controller.rb
 
+application_controller = <<EOF
+class ApplicationController < ActionController::Base
+  protect_from_forgery with: :null_session, only: Proc.new { |c| c.request.format.json? }
+end
+EOF
+
 remove_file "app/controllers/application_controller.rb"
-copy_file "app/controllers/application_controller.rb"
+create_file "app/controllers/application_controller.rb", application_controller
 
 ################### swagger_engine
 
