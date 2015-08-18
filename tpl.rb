@@ -262,6 +262,10 @@ require 'webmock/rspec'
 
 ################## grape
 
+  inside "app/api" do
+    copy_file "api.rb"
+  end
+
   route "mount API => '/'"
 
 ################## swagger api-docs
@@ -292,7 +296,7 @@ require 'webmock/rspec'
   end
 
   route "get 'home/fb', to: 'home#fb'"
-  route "root 'home#index'"
+  route "root 'home#index', via: :all"
 
   gsub_file("config/routes.rb", /^\s*#.*\n/, '')
 
