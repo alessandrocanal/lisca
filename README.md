@@ -10,7 +10,7 @@
 * _rspec_: test
 * _figaro_: config vars
 
-##System Requisites:
+##System Requirements:
 * _ruby 2.1_
 
 ##Backing Services

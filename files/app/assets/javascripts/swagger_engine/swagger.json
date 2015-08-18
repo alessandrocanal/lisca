@@ -9,7 +9,7 @@
     "schemes": [
         "http"
     ],
-    "basePath": "/",
+    "basePath": "/api/v1",
     "produces": [
         "application/json"
     ],
@@ -19,10 +19,13 @@
     "tags": [
         {
             "name": "Auth"
+        },
+        {
+            "name": "Health Check"
         }
     ],
     "paths": {
-        "/users": {
+        "/../../users": {
             "post": {
                 "tags": [
                     "Auth"
@@ -49,7 +52,7 @@
                 }
             }
         },
-        "/oauth/token": {
+        "/../../oauth/token": {
             "post": {
                 "tags": [
                     "Auth"
@@ -76,7 +79,7 @@
                 }
             }
         },
-        "/oauth/token/info": {
+        "/../../oauth/token/info": {
             "get": {
                 "tags": [
                     "Auth"
@@ -97,7 +100,7 @@
                 }
             }
         },
-        "/tokens/social": {
+        "/../../tokens/social": {
             "post": {
                 "tags": [
                     "Auth"
@@ -124,7 +127,7 @@
                 }
             }
         },
-        "/profile": {
+        "/../../profile": {
             "get": {
                 "tags": [
                     "Auth"
@@ -138,6 +141,38 @@
                 "responses": {
                     "200": {
                         "$ref": "#/responses/Profile"
+                    },
+                    "401": {
+                        "description": "unauthorized"
+                    }
+                }
+            }
+        },
+        "/ping": {
+            "get": {
+                "tags": [
+                    "Health Check"
+                ],
+                "summary": "I send ping, you send pong",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/Authorization"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "pong",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "response": {
+                                    "type": "string"
+                                }
+                            },
+                            "example": {
+                                "response": "pong"
+                            }
+                        }
                     },
                     "401": {
                         "description": "unauthorized"

@@ -49,6 +49,7 @@ gem 'swagger_engine', git: "https://github.com/batdevis/swagger_engine.git"
 gem 'faker'
 gem 'koala'
 gem 'figaro'
+gem 'grape'
 
 #################### gitignore
 
@@ -258,6 +259,10 @@ require 'webmock/rspec'
     copy_file "user.rb"
     copy_file "social_account.rb"
   end
+
+################## grape
+
+  route "mount API => '/'"
 
 ################## swagger api-docs
 
