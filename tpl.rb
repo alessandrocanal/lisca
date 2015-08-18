@@ -50,6 +50,7 @@ gem 'faker'
 gem 'koala'
 gem 'figaro'
 gem 'grape'
+gem 'redis-rails'
 
 #################### gitignore
 
@@ -104,6 +105,22 @@ inside 'config' do
   create_file "database.yml.example", config_database
   remove_file "database.yml"
   create_file "database.yml", config_database
+end
+
+################### redis
+
+inside 'config/initializers' do
+  comment_lines "session_store.rb", /Rails.application.config.session_store/
+  append_to_file "session_store.rb", 
+    "Rails.application.config.session_store :redis_store, servers: (ENV['REDIS_URL'] || 'redis://localhost:6379/0/cache')"
+end
+
+inside 'config/environments' do
+  insert_into_file "production.rb", after: "# config.cache_store = :mem_cache_store" do <<-EOF
+  
+  config.cache_store = :redis_store, (ENV['REDIS_URL'] || 'redis://localhost:6379/0/cache')
+  EOF
+  end
 end
 
 ################### layout
