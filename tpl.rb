@@ -50,31 +50,14 @@ gem 'faker'
 gem 'koala'
 gem 'figaro'
 gem 'grape'
+gem 'grape-jbuilder'
+gem 'grape-raketasks'
 gem 'redis-rails'
 
 #################### gitignore
 
 insert_into_file(".gitignore", "/config/secrets.yml\n", after: "/tmp\n")
 insert_into_file(".gitignore", "/config/database.yml\n", after: "/tmp\n")
-
-################### config/application.yml
-
-host = ask "app domain [localhost]"
-port = ask "port [3000]"
-host = "localhost" if host.blank?
-port = "3000" if port.blank?
-
-run 'bundle exec figaro install'
-config_application = <<EOF
-host: "#{host}"
-port: "#{port}"
-EOF
-
-inside 'config' do
-  remove_file "application.yml"
-  create_file "application.yml.example", config_application
-  create_file "application.yml", config_application
-end
 
 ################### config/database.yml
 
@@ -111,8 +94,14 @@ end
 
 inside 'config/initializers' do
   comment_lines "session_store.rb", /Rails.application.config.session_store/
-  append_to_file "session_store.rb", 
-    "Rails.application.config.session_store :redis_store, servers: (ENV['REDIS_URL'] || 'redis://localhost:6379/0/cache')"
+  append_to_file "session_store.rb" do <<-EOF 
+if Rails.env.production?
+  Rails.application.config.session_store :redis_store, servers: (ENV['REDIS_URL'] || 'redis://localhost:6379/0/cache')
+else
+  Rails.application.config.session_store :cookie_store, key: '_#{app_name}_session'
+end
+  EOF
+  end
 end
 
 inside 'config/environments' do
@@ -123,7 +112,7 @@ inside 'config/environments' do
   end
 end
 
-################### layout
+################### views
 
 layout_application = <<EOF
 <!DOCTYPE html>
@@ -145,6 +134,10 @@ EOF
 remove_file "app/views/layouts/application.html.erb"
 create_file "app/views/layouts/application.html.erb", layout_application
 
+copy_file "app/views/api/v1/users/show.jbuilder"
+
+################### assets
+
 remove_file "app/assets/javascripts/application.js"
 copy_file "app/assets/javascripts/application.js"
 
@@ -159,6 +152,13 @@ EOF
 remove_file "app/controllers/application_controller.rb"
 create_file "app/controllers/application_controller.rb", application_controller
 
+################### two questions, please
+
+host = ask "app domain [localhost]"
+port = ask "port [3000]"
+host = "localhost" if host.blank?
+port = "3000" if port.blank?
+
 ################### swagger_engine
 
 inside 'config/initializers' do
@@ -171,7 +171,20 @@ gsub_file "app/assets/javascripts/swagger_engine/swagger.json", "\"host\": \"loc
 ############################################
 
 after_bundle do
-  
+
+################### config/application.yml
+
+  run 'bundle exec figaro install'
+  config_application = <<EOF
+  host: "#{host}"
+  port: "#{port}"
+EOF
+
+  inside 'config' do
+    remove_file "application.yml"
+    create_file "application.yml.example", config_application
+    create_file "application.yml", config_application
+  end
 ################## rspec
 
   remove_dir "test"
@@ -284,6 +297,13 @@ require 'webmock/rspec'
   end
 
   route "mount API => '/'"
+
+  api_root = <<EOF
+config.middleware.use(Rack::Config) do |env|
+      env['api.tilt.root'] = Rails.root.join 'app', 'views', 'api'
+    end
+EOF
+  environment api_root
 
 ################## swagger api-docs
 
