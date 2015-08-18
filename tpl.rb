@@ -13,13 +13,16 @@ def source_paths
     [File.join(File.expand_path(File.dirname(__FILE__)),'files')]
 end
 
+host = ask "app domain [localhost]"
+port = ask "port [3000]"
+
 ##################### Gemfile
 remove_file "Gemfile"
 run "touch Gemfile"
 
 add_source 'https://rubygems.org'
 gem 'rails', '4.2.3'
-gem 'passenger'
+gem 'passenger-rails'
 gem 'pg'
 
 gem 'sass-rails', '~> 5.0'
@@ -88,7 +91,7 @@ end
 ################### swagger_engine
 
 inside 'config/initializers' do
-  append_to_file("assets.rb", "Rails.application.config.assets.precompile += [\"swagger_engine/print.css\", \"swagger_engine/reset.css\"]"
+  append_to_file("assets.rb", "Rails.application.config.assets.precompile += [\"swagger_engine/print.css\", \"swagger_engine/reset.css\"]")
 end
 
 copy_file "app/assets/javascripts/swagger_engine/swagger.json"
