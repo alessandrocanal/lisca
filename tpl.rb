@@ -13,9 +13,6 @@ def source_paths
     [File.join(File.expand_path(File.dirname(__FILE__)),'files')]
 end
 
-host = ask "app domain [localhost]"
-port = ask "port [3000]"
-
 ##################### Gemfile
 remove_file "Gemfile"
 run "touch Gemfile"
@@ -58,9 +55,24 @@ gem 'figaro'
 insert_into_file(".gitignore", "/config/secrets.yml\n", after: "/tmp\n")
 insert_into_file(".gitignore", "/config/database.yml\n", after: "/tmp\n")
 
-################### config
+################### config/application.yml
+
+host = ask "app domain [localhost]"
+port = ask "port [3000]"
+host = "localhost" if host.blank?
+port = "3000" if port.blank?
 
 run 'bundle exec figaro install'
+config_application = <<EOF
+host: "#{host}"
+port: "#{port}"
+EOF
+
+inside 'config' do
+  remove_file "application.yml"
+  create_file "application.yml.example", config_application
+  create_file "application.yml", config_application
+end
 
 ################### config/database.yml
 
@@ -100,6 +112,7 @@ inside 'config/initializers' do
 end
 
 copy_file "app/assets/javascripts/swagger_engine/swagger.json"
+gsub_file "app/assets/javascripts/swagger_engine/swagger.json", "\"host\": \"localhost:3000\"", "\"host\": \"#{host}:#{port}\""
 
 ############################################
 after_bundle do

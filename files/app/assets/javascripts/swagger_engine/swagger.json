@@ -5,7 +5,7 @@
         "title": "Knock",
         "description": "<a href=\"https://github.com/doorkeeper-gem/doorkeeper/wiki/Using-Resource-Owner-Password-Credentials-flow\">Resource Owner Password Credentials flow</a> with <a href=\"https://github.com/doorkeeper-gem/doorkeeper\">Doorkeeper rails gem</a>\n"
     },
-    "host": "knock.local:3250",
+    "host": "localhost:3000",
     "schemes": [
         "http"
     ],
