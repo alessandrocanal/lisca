@@ -105,6 +105,36 @@ inside 'config' do
   create_file "database.yml", config_database
 end
 
+################### layout
+
+layout_application = <<EOF
+<!DOCTYPE html>
+<html>
+<head>
+  <title>#{app_name}</title>
+  <%= stylesheet_link_tag 'application', media: 'all' %>
+  <%= javascript_include_tag 'application' %>
+  <%= csrf_meta_tags %>
+</head>
+<body>
+
+<%= yield %>
+
+</body>
+</html>
+EOF
+
+remove_file "app/views/layouts/application.html.erb"
+create_file "app/views/layouts/application.html.erb", layout_application
+
+remove_file "app/assets/javascripts/application.js"
+copy_file "app/assets/javascripts/application.js"
+
+################### application_controller.rb
+
+remove_file "app/controllers/application_controller.rb"
+copy_file "app/controllers/application_controller.rb"
+
 ################### swagger_engine
 
 inside 'config/initializers' do
@@ -115,15 +145,12 @@ copy_file "app/assets/javascripts/swagger_engine/swagger.json"
 gsub_file "app/assets/javascripts/swagger_engine/swagger.json", "\"host\": \"localhost:3000\"", "\"host\": \"#{host}:#{port}\""
 
 ############################################
-after_bundle do
-  remove_dir "test"
-  
-################### application_controller.rb
-  remove_file "app/controllers/application_controller.rb"
-  copy_file "app/controllers/application_controller.rb"
 
+after_bundle do
+  
 ################## rspec
 
+  remove_dir "test"
   run "spring stop"
   generate "rspec:install"
   run "bundle binstubs rspec-core"
