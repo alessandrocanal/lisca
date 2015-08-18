@@ -26,7 +26,10 @@ gem 'sass-rails', '~> 5.0'
 gem 'uglifier', '>= 1.3.0'
 gem 'jquery-rails'
 gem 'jbuilder', '~> 2.0'
-gem 'quiet_assets', group: :development
+
+gem_group :development do
+  gem 'quiet_assets'
+end
 
 gem_group :development, :test do
   gem 'spring'
@@ -34,9 +37,11 @@ gem_group :development, :test do
   gem 'web-console', '~> 2.0'
   gem 'rspec-rails', '~> 3.0', require: false
 end
+
 gem_group :test do
   gem 'webmock'
 end
+
 gem 'factory_girl_rails'
 gem 'doorkeeper', '~> 3.0.0'
 gem 'devise'
@@ -79,7 +84,15 @@ inside 'config' do
   remove_file "database.yml"
   create_file "database.yml", config_database
 end
-  
+
+################### swagger_engine
+
+inside 'config/initializers' do
+  append_to_file("assets.rb", "Rails.application.config.assets.precompile += [\"swagger_engine/print.css\", \"swagger_engine/reset.css\"]"
+end
+
+copy_file "app/assets/javascripts/swagger_engine/swagger.json"
+
 ############################################
 after_bundle do
   remove_dir "test"

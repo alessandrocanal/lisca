@@ -1,0 +1,397 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "version": "1.0.0",
+        "title": "Knock",
+        "description": "<a href=\"https://github.com/doorkeeper-gem/doorkeeper/wiki/Using-Resource-Owner-Password-Credentials-flow\">Resource Owner Password Credentials flow</a> with <a href=\"https://github.com/doorkeeper-gem/doorkeeper\">Doorkeeper rails gem</a>\n"
+    },
+    "host": "knock.local:3250",
+    "schemes": [
+        "http"
+    ],
+    "basePath": "/",
+    "produces": [
+        "application/json"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "tags": [
+        {
+            "name": "Auth"
+        }
+    ],
+    "paths": {
+        "/users": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "signup",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "email and password",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Registration"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "$ref": "#/responses/Registration"
+                    },
+                    "401": {
+                        "description": "signup failed"
+                    }
+                }
+            }
+        },
+        "/oauth/token": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "login",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "username and password",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Login"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "$ref": "#/responses/Login"
+                    },
+                    "401": {
+                        "description": "login not valid"
+                    }
+                }
+            }
+        },
+        "/oauth/token/info": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Shows details about the token used for authentication",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/Authorization"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "$ref": "#/responses/TokenInfo"
+                    },
+                    "401": {
+                        "description": "unauthorized"
+                    }
+                }
+            }
+        },
+        "/tokens/social": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "social login/registration",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "social uid and token",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/LoginSocial"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "$ref": "#/responses/Login"
+                    },
+                    "401": {
+                        "description": "login not valid"
+                    }
+                }
+            }
+        },
+        "/profile": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "profile info",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/Authorization"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/responses/Profile"
+                    },
+                    "401": {
+                        "description": "unauthorized"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "Registration": {
+            "description": "signup parameters",
+            "type": "object",
+            "required": [
+                "email",
+                "nickname",
+                "password",
+                "password_confirmation"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "password_confirmation": {
+                    "type": "string"
+                }
+            },
+            "example": {
+                "email": "user@here.local",
+                "nickname": "useruno",
+                "password": "0123456789",
+                "password_confirmation": "0123456789"
+            }
+        },
+        "Login": {
+            "description": "login parameters",
+            "type": "object",
+            "required": [
+                "grant_type",
+                "username",
+                "password"
+            ],
+            "properties": {
+                "grant_type": {
+                    "type": "string",
+                    "enum": [
+                        "password"
+                    ]
+                },
+                "username": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            },
+            "example": {
+                "grant_type": "password",
+                "username": "user@here.local",
+                "password": "0123456789"
+            }
+        },
+        "LoginSocial": {
+            "description": "social login/register parameters",
+            "type": "object",
+            "required": [
+                "grant_type",
+                "social_provider",
+                "social_uid",
+                "social_token"
+            ],
+            "properties": {
+                "grant_type": {
+                    "type": "string",
+                    "enum": [
+                        "social"
+                    ]
+                },
+                "social_provider": {
+                    "type": "string",
+                    "enum": [
+                        "facebook",
+                        "twitter",
+                        "gplus"
+                    ]
+                },
+                "social_uid": {
+                    "type": "string"
+                },
+                "social_token": {
+                    "type": "string"
+                }
+            },
+            "example": {
+                "grant_type": "social",
+                "social_provider": "facebook",
+                "social_uid": "0987654321",
+                "social_token": "qwerty"
+            }
+        }
+    },
+    "parameters": {
+        "Authorization": {
+            "in": "header",
+            "name": "Authorization",
+            "description": "access token",
+            "required": true,
+            "type": "string"
+        }
+    },
+    "responses": {
+        "Login": {
+            "description": "signed in",
+            "schema": {
+                "properties": {
+                    "access_token": {
+                        "type": "string"
+                    },
+                    "token_type": {
+                        "type": "string",
+                        "enum": [
+                            "bearer"
+                        ]
+                    },
+                    "expires_in": {
+                        "type": "integer"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "access_token",
+                    "token_type"
+                ],
+                "example": {
+                    "application/json": {
+                        "access_token": "1222a2997d37245fe0a24ea72bdc775442ec2a22ca0abe27211bb04f8e906d08",
+                        "token_type": "bearer",
+                        "expires_in": 7200,
+                        "created_at": "1434535004"
+                    }
+                }
+            }
+        },
+        "Registration": {
+            "description": "signed up",
+            "schema": {
+                "properties": {
+                    "access_token": {
+                        "type": "string"
+                    },
+                    "token_type": {
+                        "type": "string",
+                        "enum": [
+                            "bearer"
+                        ]
+                    },
+                    "expires_in": {
+                        "type": "integer"
+                    },
+                    "refresh_token": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "access_token",
+                    "token_type"
+                ],
+                "example": {
+                    "application/json": {
+                        "access_token": "1222a2997d37245fe0a24ea72bdc775442ec2a22ca0abe27211bb04f8e906d08",
+                        "token_type": "bearer",
+                        "expires_in": 7200,
+                        "refresh_token": "a908c03a9df2c7c07971ca5382c652ead2c54bf28e7a51aa54807a052e65a264",
+                        "created_at": "1434535004"
+                    }
+                }
+            }
+        },
+        "Profile": {
+            "description": "profile info",
+            "schema": {
+                "properties": {
+                    "nickname": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "nickname",
+                    "email"
+                ],
+                "example": {
+                    "application/json": {
+                        "nickname": "useruno",
+                        "email": "useruno@here.local"
+                    }
+                }
+            }
+        },
+        "TokenInfo": {
+            "description": "token info",
+            "schema": {
+                "properties": {
+                    "resource_owner_id": {
+                        "type": "string"
+                    },
+                    "scopes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "expires_in_seconds": {
+                        "type": "integer"
+                    },
+                    "application": {
+                        "type": "object",
+                        "properties": {
+                            "uid": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "created_at": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "resource_owner_id"
+                ],
+                "example": {
+                    "application/json": {
+                        "resource_owner_id": 2039,
+                        "scopes": [],
+                        "expires_in_seconds": 4482,
+                        "application": {
+                            "uid": null
+                        },
+                        "created_at": 1434545569
+                    }
+                }
+            }
+        }
+    }
+}
