@@ -8,6 +8,7 @@
 * _capistrano_: deploy
 * _sidekiq_: background jobs
 * _rspec_: test
+* _figaro_: config vars
 
 ##System Requisites:
 * _ruby 2.1_

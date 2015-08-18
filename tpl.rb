@@ -51,11 +51,16 @@ gem 'devise'
 gem 'swagger_engine', git: "https://github.com/batdevis/swagger_engine.git"
 gem 'faker'
 gem 'koala'
+gem 'figaro'
 
 #################### gitignore
 
 insert_into_file(".gitignore", "/config/secrets.yml\n", after: "/tmp\n")
 insert_into_file(".gitignore", "/config/database.yml\n", after: "/tmp\n")
+
+################### config
+
+run 'bundle exec figaro install'
 
 ################### config/database.yml
 
