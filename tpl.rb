@@ -293,11 +293,14 @@ require 'webmock/rspec'
 
 ################## grape
 
-  inside "app/api" do
-    copy_file "api.rb"
+  inside "app/controllers/api" do
+    copy_file "base.rb"
+    copy_file "v1/base.rb"
+    copy_file "v1/health_check.rb"
+    copy_file "v1/users.rb"
   end
 
-  route "mount API => '/'"
+  route "mount API::Base => '/'"
 
   api_root = <<EOF
 config.middleware.use(Rack::Config) do |env|

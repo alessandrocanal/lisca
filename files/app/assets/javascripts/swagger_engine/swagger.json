@@ -157,11 +157,6 @@
                     "Health Check"
                 ],
                 "summary": "I send ping, you send pong",
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/Authorization"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "pong",
