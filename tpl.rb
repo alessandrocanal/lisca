@@ -25,7 +25,6 @@ gem 'pg'
 gem 'sass-rails', '~> 5.0'
 gem 'uglifier', '>= 1.3.0'
 gem 'jquery-rails'
-gem 'jbuilder', '~> 2.0'
 
 gem_group :development do
   gem 'quiet_assets'
@@ -135,7 +134,8 @@ EOF
 remove_file "app/views/layouts/application.html.erb"
 create_file "app/views/layouts/application.html.erb", layout_application
 
-copy_file "app/views/api/v1/users/show.jbuilder"
+copy_file "app/views/api/v1/users/show.rabl"
+copy_file "app/views/api/v1/users/index.rabl"
 
 ################### assets
 

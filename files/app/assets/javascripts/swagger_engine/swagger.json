@@ -22,6 +22,9 @@
         },
         {
             "name": "Health Check"
+        },
+        {
+            "name": "User"
         }
     ],
     "paths": {
@@ -179,17 +182,93 @@
                     }
                 }
             }
+        },
+        "/users": {
+            "get": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "users list",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/Authorization"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "array of users",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "user": {
+                                        "$ref": "#/definitions/User"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "unauthorized"
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "user details",
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/Authorization"
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "type": "string",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/responses/User"
+                    },
+                    "401": {
+                        "description": "unauthorized"
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "User": {
+            "description": "user details",
+            "type": "object",
+            "properties": {
+                "nickname": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "nickname",
+                "email"
+            ],
+            "example": {
+                "application/json": {
+                    "nickname": "useruno",
+                    "email": "useruno@here.local"
+                }
+            }
+        },
         "Registration": {
             "description": "signup parameters",
             "type": "object",
-            "required": [
-                "email",
-                "password",
-                "password_confirmation"
-            ],
             "properties": {
                 "email": {
                     "type": "string"
@@ -201,6 +280,11 @@
                     "type": "string"
                 }
             },
+            "required": [
+                "email",
+                "password",
+                "password_confirmation"
+            ],
             "example": {
                 "email": "user@here.local",
                 "password": "0123456789",
@@ -210,11 +294,6 @@
         "Login": {
             "description": "login parameters",
             "type": "object",
-            "required": [
-                "grant_type",
-                "username",
-                "password"
-            ],
             "properties": {
                 "grant_type": {
                     "type": "string",
@@ -229,6 +308,11 @@
                     "type": "string"
                 }
             },
+            "required": [
+                "grant_type",
+                "username",
+                "password"
+            ],
             "example": {
                 "grant_type": "password",
                 "username": "user@here.local",
@@ -238,12 +322,6 @@
         "LoginSocial": {
             "description": "social login/register parameters",
             "type": "object",
-            "required": [
-                "grant_type",
-                "social_provider",
-                "social_uid",
-                "social_token"
-            ],
             "properties": {
                 "grant_type": {
                     "type": "string",
@@ -266,6 +344,12 @@
                     "type": "string"
                 }
             },
+            "required": [
+                "grant_type",
+                "social_provider",
+                "social_uid",
+                "social_token"
+            ],
             "example": {
                 "grant_type": "social",
                 "social_provider": "facebook",
@@ -369,6 +453,26 @@
                 ],
                 "example": {
                     "application/json": {
+                        "email": "useruno@here.local"
+                    }
+                }
+            }
+        },
+        "User": {
+            "description": "user details",
+            "schema": {
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "nickname",
+                    "email"
+                ],
+                "example": {
+                    "application/json": {
+                        "nickname": "useruno",
                         "email": "useruno@here.local"
                     }
                 }
