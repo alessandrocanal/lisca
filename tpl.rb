@@ -50,8 +50,9 @@ gem 'faker'
 gem 'koala'
 gem 'figaro'
 gem 'grape'
-gem 'grape-jbuilder'
 gem 'grape-raketasks'
+gem 'oj'
+gem 'grape-rabl'
 gem 'redis-rails'
 
 #################### gitignore

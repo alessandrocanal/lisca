@@ -1,11 +1,11 @@
 require 'doorkeeper/grape/helpers'
 
 class API < Grape::API
+  prefix :api
   version 'v1', using: :path, vendor: 'Rawfish'
   format :json
-  formatter :json, Grape::Formatter::Jbuilder
+  formatter :json, Grape::Formatter::Rabl
   default_format :json
-  prefix :api
 
   helpers Doorkeeper::Grape::Helpers
 
@@ -20,12 +20,17 @@ class API < Grape::API
       { response: "pong" }
     end
   end
-  
+
   resource :users do
+    desc "users list"
+    get nil, rabl: 'v1/users/index' do
+      @users = User.order("id desc")
+    end
+
     desc "user detail"
-    get ':id', jbuilder: 'v1/users/show' do
+    get ':id', rabl: 'v1/users/show' do
       @user = User.find params[:id]
     end
   end
-end
 
+end
