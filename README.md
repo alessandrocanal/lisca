@@ -38,6 +38,7 @@ rails new thenextbigthing -d postgresql -T -m lisca/tpl.rb
 * _redis_
 
 ##Credits
-* @batdevis
+* [@batdevis](http://twitter.com/batdevis)
 * supported by [Rawfish](http://rawfishindustries.com/)
+
   [![Rawfish Logo](http://rawfishindustries.com/wp-content/uploads/2015/03/logo_rawfish_WEB.jpg)](http://rawfishindustries.com)
