@@ -4,11 +4,17 @@
 ##How to use it
 
 Clone it:
-`git clone {repo url}`
+```
+git clone {repo url}
+```
 go to new project dir
-`cd ..`
+```
+cd ..
+```
 create new rails app based on Lisca template:
-`rails new thenextbigthing -m lisca/tpl.rb`
+```
+rails new thenextbigthing -m lisca/tpl.rb
+```
 
 ##Features
 
@@ -33,4 +39,4 @@ create new rails app based on Lisca template:
 
 ##Credits
 * @batdevis
-* supported by Rawfish
+* supported by [Rawfish](http://rawfishindustries.com/)
