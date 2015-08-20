@@ -11,9 +11,9 @@ go to new project dir
 ```
 cd ..
 ```
-create new rails app based on Lisca template:
+create new rails app with postgresql db, no test unit and based on Lisca template:
 ```
-rails new thenextbigthing -m lisca/tpl.rb
+rails new thenextbigthing -d postgresql -T -m lisca/tpl.rb
 ```
 
 ##Features
@@ -22,7 +22,7 @@ rails new thenextbigthing -m lisca/tpl.rb
 * _devise_: user management
 * _doorkeeper_: Resource Owner Password Credentials flow
 * _swagger_engine_: api documentation
-* _capistrano_: deploy
+* _capistrano_: deploy (2do)
 * _sidekiq_: background jobs
 * _rspec_: test
 * _figaro_: config vars
