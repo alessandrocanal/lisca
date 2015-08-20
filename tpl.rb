@@ -13,6 +13,11 @@ def source_paths
     [File.join(File.expand_path(File.dirname(__FILE__)),'files')]
 end
 
+################### readme
+
+remove_file "README.rdoc"
+copy_file "README.md"
+
 ##################### Gemfile
 remove_file "Gemfile"
 run "touch Gemfile"

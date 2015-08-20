@@ -1,14 +1,6 @@
-#Lisca
-###startup rails template 
+#Rails app based on Lisca startup template
 
-##How to use it
-
-Clone it:
-`git clone {repo url}`
-go to new project dir
-`cd ..`
-create new rails app based on Lisca template:
-`rails new thenextbigthing -m lisca/tpl.rb`
+https://bitbucket.org/batdevis/lisca
 
 ##Features
 
@@ -32,5 +24,4 @@ create new rails app based on Lisca template:
 * _redis_
 
 ##Credits
-* @batdevis
-* supported by Rawfish
+* Rawfish
