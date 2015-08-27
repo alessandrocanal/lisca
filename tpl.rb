@@ -8,7 +8,7 @@
 # Add the current directory to the path Thor uses
 # to look up files
 def source_paths
-  Array(super) + 
+  Array(super) +
 #    [File.expand_path(File.dirname(__FILE__))]
     [File.join(File.expand_path(File.dirname(__FILE__)),'files')]
 end
@@ -24,6 +24,7 @@ run "touch Gemfile"
 
 add_source 'https://rubygems.org'
 gem 'rails', '4.2.3'
+gem 'therubyracer'
 gem 'passenger-rails'
 gem 'pg'
 
@@ -59,10 +60,16 @@ gem 'oj'
 gem 'grape-rabl'
 gem 'redis-rails'
 
+gem 'capistrano',  '~> 3.1'
+gem 'capistrano-rails', '~> 1.1'
+gem 'capistrano-touch-linked-files'
+gem 'capistrano-passenger'
+
 #################### gitignore
 
 insert_into_file(".gitignore", "/config/secrets.yml\n", after: "/tmp\n")
 insert_into_file(".gitignore", "/config/database.yml\n", after: "/tmp\n")
+insert_into_file(".gitignore", "/public/assets\n", after: "/tmp\n")
 
 ################### config/database.yml
 
@@ -99,7 +106,7 @@ end
 
 inside 'config/initializers' do
   comment_lines "session_store.rb", /Rails.application.config.session_store/
-  append_to_file "session_store.rb" do <<-EOF 
+  append_to_file "session_store.rb" do <<-EOF
 if Rails.env.production?
   Rails.application.config.session_store :redis_store, servers: (ENV['REDIS_URL'] || 'redis://localhost:6379/0/cache')
 else
@@ -111,7 +118,7 @@ end
 
 inside 'config/environments' do
   insert_into_file "production.rb", after: "# config.cache_store = :mem_cache_store" do <<-EOF
-  
+
   config.cache_store = :redis_store, (ENV['REDIS_URL'] || 'redis://localhost:6379/0/cache')
   EOF
   end
@@ -146,6 +153,8 @@ copy_file "app/views/api/v1/users/index.rabl"
 
 remove_file "app/assets/javascripts/application.js"
 copy_file "app/assets/javascripts/application.js"
+remove_file "app/assets/stylesheets/application.css"
+copy_file "app/assets/stylesheets/application.scss"
 
 ################### application_controller.rb
 
@@ -158,12 +167,13 @@ EOF
 remove_file "app/controllers/application_controller.rb"
 create_file "app/controllers/application_controller.rb", application_controller
 
-################### two questions, please
+################### some questions, please
 
 host = ask "app domain [localhost]"
 port = ask "port [3000]"
 host = "localhost" if host.blank?
 port = "3000" if port.blank?
+#repo_url = ask "repo url"
 
 ################### swagger_engine
 
@@ -182,8 +192,10 @@ after_bundle do
 
   run 'bundle exec figaro install'
   config_application = <<EOF
-  host: "#{host}"
-  port: "#{port}"
+HOST: "#{host}"
+PORT: "#{port}"
+SECRET_KEY_BASE: "generate one with `rake secret`"
+SECRET_DEVISE: "generate one with `rake secret`"
 EOF
 
   inside 'config' do
@@ -198,7 +210,7 @@ EOF
   generate "rspec:install"
   run "bundle binstubs rspec-core"
 
-  insert_into_file "spec/rails_helper.rb", 
+  insert_into_file "spec/rails_helper.rb",
     after: "# Add additional requires below this line. Rails is not loaded until this point!" do <<-RUBY
 
 Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f }
@@ -206,48 +218,52 @@ require 'webmock/rspec'
     RUBY
     end
 
-  insert_into_file "spec/rails_helper.rb", 
+  insert_into_file "spec/rails_helper.rb",
     after: "config.infer_spec_type_from_file_location!" do <<-RUBY
-    
+
   config.include Helpers
   WebMock.disable_net_connect!(allow_localhost: true)
   RUBY
     end
-    
+
   inside "spec/support" do
     copy_file "api_helper.rb"
     copy_file "stub_helper.rb"
-  end  
+  end
 
 ################### devise
 
   run "rails generate devise:install"
   run "rails generate devise User"
-
+  inside 'config/initializers' do
+    insert_into_file "devise.rb",
+      "  config.secret_key = ENV['SECRET_DEVISE']\n",
+      after: "  #config.secret_key"
+  end
 ################### doorkeeper
 
   run "rails generate doorkeeper:install"
   run "rails generate doorkeeper:migration"
 
   inside 'config/initializers' do
-    comment_lines "doorkeeper.rb", 
+    comment_lines "doorkeeper.rb",
       /fail "Please configure doorkeeper resource_owner_authenticator block located in/
-      
-    insert_into_file "doorkeeper.rb", 
+
+    insert_into_file "doorkeeper.rb",
       "    current_user || warder.authenticate!(scope: :user)\n",
       after: "resource_owner_authenticator do\n"
 
-    insert_into_file "doorkeeper.rb", 
+    insert_into_file "doorkeeper.rb",
       before: "\n  resource_owner_authenticator do\n" do <<-RUBY
 
       #https://github.com/doorkeeper-gem/doorkeeper/wiki/Using-Resource-Owner-Password-Credentials-flow
       resource_owner_from_credentials do |routes|
         User.enter(params)
-      end  
+      end
       RUBY
       end
 
-    append_to_file "doorkeeper.rb", 
+    append_to_file "doorkeeper.rb",
       "\nDoorkeeper.configuration.token_grant_types << 'password'"
 
   end
@@ -261,14 +277,14 @@ require 'webmock/rspec'
 
 ################### devise and doorkeeper integration
 
-  inside "app/models" do 
+  inside "app/models" do
     remove_file "user.rb"
     copy_file "user.rb"
     copy_file "social_account.rb"
     copy_file "concerns/doorkeeper_resource_owner_password_credentials_flow.rb"
     copy_file "concerns/social_auth.rb"
   end
-  
+
   generate :migration, "create_social_accounts user:references provider:string uid:string token:string email:string data:json"
   generate :migration, "add_timestamps_to_social_accounts created_at:datetime updated_at:datetime"
 
@@ -290,7 +306,7 @@ require 'webmock/rspec'
     copy_file "auth_request.rb"
     copy_file "profile_request.rb"
   end
-  
+
   inside "spec/factories" do
     copy_file "user.rb"
     copy_file "social_account.rb"
@@ -345,6 +361,47 @@ EOF
   route "root 'home#index', via: :all"
 
   gsub_file("config/routes.rb", /^\s*#.*\n/, '')
+
+################## capistrano
+
+  run "bundle exec cap install STAGES=development,staging,production"
+
+  gsub_file("Capfile",
+    "# require 'capistrano/bundler'",
+    "require 'capistrano/bundler'"
+  )
+  gsub_file("Capfile",
+    "# require 'capistrano/rails/assets'",
+    "require 'capistrano/rails/assets'"
+  )
+  gsub_file("Capfile",
+    "# require 'capistrano/rails/migrations'",
+    "require 'capistrano/rails/migrations'"
+  )
+  gsub_file("Capfile",
+    "# require 'capistrano/passenger'",
+    "require 'capistrano/passenger'"
+  )
+  #requires permission in sudoers file (https://github.com/capistrano/passenger/issues/2#issuecomment-87370687):
+  #deployuser    ALL=(all) NOPASSWD: /usr/bin/passenger-config restart-app
+  #insert_into_file("config/deploy.rb", "set :passenger_restart_with_sudo, true\n", before: "set :application")
+
+  insert_into_file("Capfile", "require 'capistrano/touch-linked-files'\n", before: "# Load custom tasks from")
+
+  gsub_file("config/deploy.rb", "set :application, 'my_app_name'", "set :application, '#{app_name}'")
+  #gsub_file("deploy/deploy.rb", /^set :repo_url/, "set :repo_url, '#{repo_url}'")
+  gsub_file("config/deploy.rb",
+    "# set :deploy_to, '/var/www/my_app_name'",
+    "set :deploy_to, '/data/webapp'"
+  )
+  gsub_file("config/deploy.rb",
+    "# set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/secrets.yml')",
+    "set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/secrets.yml', 'config/application.yml')"
+  )
+  gsub_file("config/deploy.rb",
+    "# set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')",
+    "set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')"
+  )
 
 ################## git
   git :init
