@@ -24,6 +24,7 @@ run "touch Gemfile"
 
 add_source 'https://rubygems.org'
 gem 'rails', '4.2.3'
+gem 'therubyracer'
 gem 'passenger-rails'
 gem 'pg'
 
@@ -68,6 +69,7 @@ gem 'capistrano-passenger'
 
 insert_into_file(".gitignore", "/config/secrets.yml\n", after: "/tmp\n")
 insert_into_file(".gitignore", "/config/database.yml\n", after: "/tmp\n")
+insert_into_file(".gitignore", "/public/assets\n", after: "/tmp\n")
 
 ################### config/database.yml
 
@@ -151,6 +153,8 @@ copy_file "app/views/api/v1/users/index.rabl"
 
 remove_file "app/assets/javascripts/application.js"
 copy_file "app/assets/javascripts/application.js"
+remove_file "app/assets/stylesheets/application.css"
+copy_file "app/assets/stylesheets/application.scss"
 
 ################### application_controller.rb
 
@@ -188,8 +192,10 @@ after_bundle do
 
   run 'bundle exec figaro install'
   config_application = <<EOF
-  host: "#{host}"
-  port: "#{port}"
+HOST: "#{host}"
+PORT: "#{port}"
+SECRET_KEY_BASE: "generate one with `rake secret`"
+SECRET_DEVISE: "generate one with `rake secret`"
 EOF
 
   inside 'config' do
@@ -229,7 +235,11 @@ require 'webmock/rspec'
 
   run "rails generate devise:install"
   run "rails generate devise User"
-
+  inside 'config/initializers' do
+    insert_into_file "devise.rb",
+      "  config.secret_key = ENV['SECRET_DEVISE']\n",
+      after: "  #config.secret_key"
+  end
 ################### doorkeeper
 
   run "rails generate doorkeeper:install"
@@ -374,7 +384,7 @@ EOF
   )
   #requires permission in sudoers file (https://github.com/capistrano/passenger/issues/2#issuecomment-87370687):
   #deployuser    ALL=(all) NOPASSWD: /usr/bin/passenger-config restart-app
-  insert_info_file("config/deploy.rb", "set :passenger_restart_with_sudo, true", before: "set :application")
+  #insert_into_file("config/deploy.rb", "set :passenger_restart_with_sudo, true\n", before: "set :application")
 
   insert_into_file("Capfile", "require 'capistrano/touch-linked-files'\n", before: "# Load custom tasks from")
 
