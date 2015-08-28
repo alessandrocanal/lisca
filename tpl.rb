@@ -382,14 +382,10 @@ EOF
     "# require 'capistrano/passenger'",
     "require 'capistrano/passenger'"
   )
-  #requires permission in sudoers file (https://github.com/capistrano/passenger/issues/2#issuecomment-87370687):
-  #deployuser    ALL=(all) NOPASSWD: /usr/bin/passenger-config restart-app
-  #insert_into_file("config/deploy.rb", "set :passenger_restart_with_sudo, true\n", before: "set :application")
-
   insert_into_file("Capfile", "require 'capistrano/touch-linked-files'\n", before: "# Load custom tasks from")
 
   gsub_file("config/deploy.rb", "set :application, 'my_app_name'", "set :application, '#{app_name}'")
-  #gsub_file("deploy/deploy.rb", /^set :repo_url/, "set :repo_url, '#{repo_url}'")
+  
   gsub_file("config/deploy.rb",
     "# set :deploy_to, '/var/www/my_app_name'",
     "set :deploy_to, '/data/webapp'"
