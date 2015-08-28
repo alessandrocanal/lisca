@@ -67,7 +67,6 @@ gem 'capistrano-passenger'
 
 #################### gitignore
 
-insert_into_file(".gitignore", "/config/secrets.yml\n", after: "/tmp\n")
 insert_into_file(".gitignore", "/config/database.yml\n", after: "/tmp\n")
 insert_into_file(".gitignore", "/public/assets\n", after: "/tmp\n")
 
@@ -151,8 +150,13 @@ copy_file "app/views/api/v1/users/index.rabl"
 
 ################### assets
 
+application_js = <<EOF
+//= require jquery
+//= require jquery_ujs
+EOF
+
 remove_file "app/assets/javascripts/application.js"
-copy_file "app/assets/javascripts/application.js"
+create_file "app/assets/javascripts/application.js", application_js
 remove_file "app/assets/stylesheets/application.css"
 copy_file "app/assets/stylesheets/application.scss"
 
@@ -194,8 +198,8 @@ after_bundle do
   config_application = <<EOF
 HOST: "#{host}"
 PORT: "#{port}"
-SECRET_KEY_BASE: "generate one with `rake secret`"
-SECRET_DEVISE: "generate one with `rake secret`"
+SECRET_KEY_BASE: "please_generate_one_with_rake_secret_task"
+SECRET_DEVISE: "please_generate_one_with_rake_secret_task"
 EOF
 
   inside 'config' do
@@ -203,6 +207,23 @@ EOF
     create_file "application.yml.example", config_application
     create_file "application.yml", config_application
   end
+
+################### config/secrets.yml
+
+  config_secrets = <<EOF
+production:
+  secret_key_base: <%= ENV["SECRET_KEY_BASE"] %>
+development:
+  secret_key_base: <%= ENV["SECRET_KEY_BASE"] %>
+test:
+  secret_key_base: <%= ENV["SECRET_KEY_BASE"] %>
+EOF
+
+  inside 'config' do
+    remove_file "secrets.yml"
+    create_file "secrets.yml", config_secrets
+  end
+
 ################## rspec
 
   remove_dir "test"
@@ -237,8 +258,8 @@ require 'webmock/rspec'
   run "rails generate devise User"
   inside 'config/initializers' do
     insert_into_file "devise.rb",
-      "  config.secret_key = ENV['SECRET_DEVISE']\n",
-      after: "  #config.secret_key"
+      "  config.secret_key = ENV['SECRET_DEVISE']\n\n",
+      before: "  # ==> Mailer Configuration"
   end
 ################### doorkeeper
 
@@ -384,20 +405,32 @@ EOF
   )
   insert_into_file("Capfile", "require 'capistrano/touch-linked-files'\n", before: "# Load custom tasks from")
 
-  gsub_file("config/deploy.rb", "set :application, 'my_app_name'", "set :application, '#{app_name}'")
-  
-  gsub_file("config/deploy.rb",
-    "# set :deploy_to, '/var/www/my_app_name'",
-    "set :deploy_to, '/data/webapp'"
-  )
-  gsub_file("config/deploy.rb",
-    "# set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/secrets.yml')",
-    "set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/secrets.yml', 'config/application.yml')"
-  )
-  gsub_file("config/deploy.rb",
-    "# set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')",
-    "set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')"
-  )
+  inside "config" do
+
+    gsub_file("deploy.rb",
+      "set :application, 'my_app_name'",
+      "set :application, '#{app_name}'"
+    )
+
+    insert_into_file("deploy.rb",
+      "set :rails_env, 'production'\n",
+      after: "# set :deploy_to, '/var/www/my_app_name'\n"
+    )
+
+    gsub_file("deploy.rb",
+      "# set :deploy_to, '/var/www/my_app_name'",
+      "set :deploy_to, '/data/webapp'"
+    )
+    gsub_file("deploy.rb",
+      "# set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/secrets.yml')",
+      "set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/application.yml')"
+    )
+    gsub_file("deploy.rb",
+      "# set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')",
+      "set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')"
+    )
+
+  end
 
 ################## git
   git :init
