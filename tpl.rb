@@ -470,6 +470,10 @@ EOF
       "set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')"
     )
 
+    insert_into_file("deploy/development.rb",
+      "set :branch, fetch(:branch, 'development')\n\n",
+      before: "# role-based syntax\n"
+    )
   end
 
 ################## git
