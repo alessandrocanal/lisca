@@ -65,6 +65,9 @@ gem 'capistrano-rails', '~> 1.1'
 gem 'capistrano-touch-linked-files'
 gem 'capistrano-passenger'
 
+gem 'sidekiq'
+gem 'devise-async'
+
 #################### gitignore
 
 insert_into_file(".gitignore", "/config/database.yml\n", after: "/tmp\n")
@@ -122,6 +125,39 @@ inside 'config/environments' do
   EOF
   end
 end
+
+
+################### sidekiq
+
+initializer 'sidekiq.rb', <<-CODE
+Sidekiq.configure_server do |config|
+  config.redis = { url: ENV['REDIS_URL'] || 'redis://localhost:6379/0/cache' }
+end
+
+Sidekiq.configure_client do |config|
+  config.redis = { url: ENV['REDIS_URL'] || 'redis://localhost:6379/0/cache' }
+end
+CODE
+
+inside 'config' do
+
+  config_sidekiq = <<EOF
+---
+:queues:
+  - default
+  - [mailer, 2]
+EOF
+
+  create_file 'sidekiq.tml', config_sidekiq
+
+end
+
+################### devise async
+
+initializer 'devise_async.rb', <<-CODE
+Devise::Async.backend = :sidekiq
+Devise::Async.queue = :mailer
+CODE
 
 ################### views
 
@@ -191,6 +227,10 @@ gsub_file "app/assets/javascripts/swagger_engine/swagger.json", "\"host\": \"loc
 ############################################
 
 after_bundle do
+
+################### sidekiq
+
+run 'bundle binstubs sidekiq'
 
 ################### config/application.yml
 

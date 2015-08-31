@@ -22,7 +22,7 @@ rails new thenextbigthing -d postgresql -T -m lisca/tpl.rb
 * _devise_: user management
 * _doorkeeper_: Resource Owner Password Credentials flow
 * _swagger_engine_: api documentation
-* _capistrano_: deploy (2do)
+* _capistrano_: deploy
 * _sidekiq_: background jobs
 * _rspec_: test
 * _figaro_: config vars
