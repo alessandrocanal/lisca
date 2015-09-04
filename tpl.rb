@@ -224,6 +224,15 @@ end
 copy_file "app/assets/javascripts/swagger_engine/swagger.json"
 gsub_file "app/assets/javascripts/swagger_engine/swagger.json", "\"host\": \"localhost:3000\"", "\"host\": \"#{host}:#{port}\""
 
+################### utility scripts
+
+cmd = <<EOF
+#!/usr/bin/env bash
+grep \"PORT\" config/application.yml|awk '{print $2}'|xargs rails s -p
+EOF
+create_file "bin/serve", cmd
+chmod 'bin/serve', 775
+
 ############################################
 
 after_bundle do
