@@ -247,6 +247,7 @@ run 'bundle binstubs sidekiq'
   config_application = <<EOF
 HOST: "#{host}"
 PORT: "#{port}"
+URL: "http://#{host}:#{port}"
 SECRET_KEY_BASE: "please_generate_one_with_rake_secret_task"
 SECRET_DEVISE: "please_generate_one_with_rake_secret_task"
 EOF
