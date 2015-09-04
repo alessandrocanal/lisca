@@ -63,6 +63,12 @@ Suppose that we are working in `development` environment.
   ```
 * edit `/data/webapp/shared/config/*.yml` files.
 
+###Local development
+
+```
+./bin/serve
+```
+
 ###System Requirements
 * _ruby 2.1_
 
