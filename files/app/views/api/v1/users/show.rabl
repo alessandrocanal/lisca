@@ -1,3 +1,9 @@
 object @user
 cache @user
-attributes :id, :email
+node(:data) do |obj|
+  {
+    id: obj.id,
+    email: obj.email
+  }
+end
+#attributes :id, :email
