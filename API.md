@@ -14,7 +14,7 @@ HTTP STATUS: `200`
 body:
 ```
 {
-  "items": [
+  "data": [
     {
       "id": 1,
       "name": "table"
@@ -44,7 +44,7 @@ HTTP STATUS: `200`
 body:
 ```
 {
-  "item": {
+  "data": {
     "id": 1,
     "name": "table"
   }
@@ -61,7 +61,7 @@ PUT /things/:id
 parameters:
 ```
 {
-  "item": {
+  "data": {
     "id": 1,
     "name": "table"
   }
@@ -99,7 +99,7 @@ POST /things
 parameters:
 ```
 {
-  "item": {
+  "data": {
     "name": "white board"
   }
 }
