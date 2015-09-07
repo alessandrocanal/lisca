@@ -401,6 +401,24 @@ config.middleware.use(Rack::Config) do |env|
 EOF
   environment api_root
 
+################## rabl
+
+  rabl_init = <<EOF
+require 'rabl'
+Rabl.configure do |config|
+  config.perform_caching = Rails.env.production?
+  config.raise_on_missing_attribute = !Rails.env.production?
+  #setup root in views, ex
+  #collection @users, root: "items"
+  config.include_json_root = false
+  config.include_child_root = false
+end
+EOF
+
+  inside "config/initializers" do
+    create_file "rabl.rb", rabl_init
+  end
+
 ################## swagger api-docs
 
   route "mount SwaggerEngine::Engine, at: '/api-docs'"
