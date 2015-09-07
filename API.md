@@ -109,10 +109,6 @@ parameters:
 success:
 HTTP STATUS: `201`
 
-body:
-```
-```
-
 error:
 HTTP STATUS: `400`
 
