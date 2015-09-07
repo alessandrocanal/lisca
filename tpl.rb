@@ -65,9 +65,11 @@ gem 'capistrano-rails', '~> 1.1'
 gem 'capistrano-touch-linked-files'
 gem 'capistrano-passenger'
 
+gem 'sidekiq'
+gem 'devise-async'
+
 #################### gitignore
 
-insert_into_file(".gitignore", "/config/secrets.yml\n", after: "/tmp\n")
 insert_into_file(".gitignore", "/config/database.yml\n", after: "/tmp\n")
 insert_into_file(".gitignore", "/public/assets\n", after: "/tmp\n")
 
@@ -124,6 +126,39 @@ inside 'config/environments' do
   end
 end
 
+
+################### sidekiq
+
+initializer 'sidekiq.rb', <<-CODE
+Sidekiq.configure_server do |config|
+  config.redis = { url: ENV['REDIS_URL'] || 'redis://localhost:6379/0/cache' }
+end
+
+Sidekiq.configure_client do |config|
+  config.redis = { url: ENV['REDIS_URL'] || 'redis://localhost:6379/0/cache' }
+end
+CODE
+
+inside 'config' do
+
+  config_sidekiq = <<EOF
+---
+:queues:
+  - default
+  - [mailer, 2]
+EOF
+
+  create_file 'sidekiq.tml', config_sidekiq
+
+end
+
+################### devise async
+
+initializer 'devise_async.rb', <<-CODE
+Devise::Async.backend = :sidekiq
+Devise::Async.queue = :mailer
+CODE
+
 ################### views
 
 layout_application = <<EOF
@@ -151,8 +186,13 @@ copy_file "app/views/api/v1/users/index.rabl"
 
 ################### assets
 
+application_js = <<EOF
+//= require jquery
+//= require jquery_ujs
+EOF
+
 remove_file "app/assets/javascripts/application.js"
-copy_file "app/assets/javascripts/application.js"
+create_file "app/assets/javascripts/application.js", application_js
 remove_file "app/assets/stylesheets/application.css"
 copy_file "app/assets/stylesheets/application.scss"
 
@@ -184,9 +224,22 @@ end
 copy_file "app/assets/javascripts/swagger_engine/swagger.json"
 gsub_file "app/assets/javascripts/swagger_engine/swagger.json", "\"host\": \"localhost:3000\"", "\"host\": \"#{host}:#{port}\""
 
+################### utility scripts
+
+cmd = <<EOF
+#!/usr/bin/env bash
+grep \"PORT\" config/application.yml|awk '{print $2}'|xargs rails s -p
+EOF
+create_file "bin/serve", cmd
+chmod 'bin/serve', 775
+
 ############################################
 
 after_bundle do
+
+################### sidekiq
+
+run 'bundle binstubs sidekiq'
 
 ################### config/application.yml
 
@@ -194,8 +247,9 @@ after_bundle do
   config_application = <<EOF
 HOST: "#{host}"
 PORT: "#{port}"
-SECRET_KEY_BASE: "generate one with `rake secret`"
-SECRET_DEVISE: "generate one with `rake secret`"
+URL: "http://#{host}:#{port}"
+SECRET_KEY_BASE: "please_generate_one_with_rake_secret_task"
+SECRET_DEVISE: "please_generate_one_with_rake_secret_task"
 EOF
 
   inside 'config' do
@@ -203,6 +257,23 @@ EOF
     create_file "application.yml.example", config_application
     create_file "application.yml", config_application
   end
+
+################### config/secrets.yml
+
+  config_secrets = <<EOF
+production:
+  secret_key_base: <%= ENV["SECRET_KEY_BASE"] %>
+development:
+  secret_key_base: <%= ENV["SECRET_KEY_BASE"] %>
+test:
+  secret_key_base: <%= ENV["SECRET_KEY_BASE"] %>
+EOF
+
+  inside 'config' do
+    remove_file "secrets.yml"
+    create_file "secrets.yml", config_secrets
+  end
+
 ################## rspec
 
   remove_dir "test"
@@ -237,8 +308,8 @@ require 'webmock/rspec'
   run "rails generate devise User"
   inside 'config/initializers' do
     insert_into_file "devise.rb",
-      "  config.secret_key = ENV['SECRET_DEVISE']\n",
-      after: "  #config.secret_key"
+      "  config.secret_key = ENV['SECRET_DEVISE']\n\n",
+      before: "  # ==> Mailer Configuration"
   end
 ################### doorkeeper
 
@@ -330,6 +401,24 @@ config.middleware.use(Rack::Config) do |env|
 EOF
   environment api_root
 
+################## rabl
+
+  rabl_init = <<EOF
+require 'rabl'
+Rabl.configure do |config|
+  config.perform_caching = Rails.env.production?
+  config.raise_on_missing_attribute = !Rails.env.production?
+  #setup root in views, ex
+  #collection @users, root: "items"
+  config.include_json_root = false
+  config.include_child_root = false
+end
+EOF
+
+  inside "config/initializers" do
+    create_file "rabl.rb", rabl_init
+  end
+
 ################## swagger api-docs
 
   route "mount SwaggerEngine::Engine, at: '/api-docs'"
@@ -382,26 +471,39 @@ EOF
     "# require 'capistrano/passenger'",
     "require 'capistrano/passenger'"
   )
-  #requires permission in sudoers file (https://github.com/capistrano/passenger/issues/2#issuecomment-87370687):
-  #deployuser    ALL=(all) NOPASSWD: /usr/bin/passenger-config restart-app
-  #insert_into_file("config/deploy.rb", "set :passenger_restart_with_sudo, true\n", before: "set :application")
-
   insert_into_file("Capfile", "require 'capistrano/touch-linked-files'\n", before: "# Load custom tasks from")
 
-  gsub_file("config/deploy.rb", "set :application, 'my_app_name'", "set :application, '#{app_name}'")
-  #gsub_file("deploy/deploy.rb", /^set :repo_url/, "set :repo_url, '#{repo_url}'")
-  gsub_file("config/deploy.rb",
-    "# set :deploy_to, '/var/www/my_app_name'",
-    "set :deploy_to, '/data/webapp'"
-  )
-  gsub_file("config/deploy.rb",
-    "# set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/secrets.yml')",
-    "set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/secrets.yml', 'config/application.yml')"
-  )
-  gsub_file("config/deploy.rb",
-    "# set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')",
-    "set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')"
-  )
+  inside "config" do
+
+    gsub_file("deploy.rb",
+      "set :application, 'my_app_name'",
+      "set :application, '#{app_name}'"
+    )
+
+    insert_into_file("deploy.rb",
+      "set :rails_env, 'production'\n",
+      after: "# set :deploy_to, '/var/www/my_app_name'\n"
+    )
+
+    gsub_file("deploy.rb",
+      "# set :deploy_to, '/var/www/my_app_name'",
+      "set :deploy_to, '/data/webapp'"
+    )
+    gsub_file("deploy.rb",
+      "# set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/secrets.yml')",
+      "set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/application.yml')"
+    )
+    gsub_file("deploy.rb",
+      "# set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')",
+      "set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')"
+    )
+=begin
+    insert_into_file("deploy/development.rb",
+      "set :branch, fetch(:branch, 'development')\n\n",
+      before: "# role-based syntax\n"
+    )
+=end
+  end
 
 ################## git
   git :init

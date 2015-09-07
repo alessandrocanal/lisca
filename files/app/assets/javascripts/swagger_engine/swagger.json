@@ -5,7 +5,6 @@
         "title": "Knock",
         "description": "<a href=\"https://github.com/doorkeeper-gem/doorkeeper/wiki/Using-Resource-Owner-Password-Credentials-flow\">Resource Owner Password Credentials flow</a> with <a href=\"https://github.com/doorkeeper-gem/doorkeeper\">Doorkeeper rails gem</a>\n"
     },
-    "host": "localhost:3000",
     "schemes": [
         "http"
     ],
@@ -193,11 +192,11 @@
                     "200": {
                         "description": "array of users",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "user": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "array",
+                                    "items": {
                                         "$ref": "#/definitions/User"
                                     }
                                 }
@@ -229,7 +228,16 @@
                 ],
                 "responses": {
                     "200": {
-                        "$ref": "#/responses/User"
+                        "description": "user detail",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "data": {
+                                    "type": "object",
+                                    "$ref": "#/definitions/User"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "unauthorized"
@@ -243,22 +251,20 @@
             "description": "user details",
             "type": "object",
             "properties": {
-                "nickname": {
-                    "type": "string"
+                "id": {
+                    "type": "integer"
                 },
                 "email": {
                     "type": "string"
                 }
             },
             "required": [
-                "nickname",
+                "id",
                 "email"
             ],
             "example": {
-                "application/json": {
-                    "nickname": "useruno",
-                    "email": "useruno@here.local"
-                }
+                "id": 1,
+                "email": "useruno@here.local"
             }
         },
         "Registration": {
@@ -388,12 +394,10 @@
                     "token_type"
                 ],
                 "example": {
-                    "application/json": {
-                        "access_token": "1222a2997d37245fe0a24ea72bdc775442ec2a22ca0abe27211bb04f8e906d08",
-                        "token_type": "bearer",
-                        "expires_in": 7200,
-                        "created_at": "1434535004"
-                    }
+                    "access_token": "1222a2997d37245fe0a24ea72bdc775442ec2a22ca0abe27211bb04f8e906d08",
+                    "token_type": "bearer",
+                    "expires_in": 7200,
+                    "created_at": "1434535004"
                 }
             }
         },
@@ -425,13 +429,11 @@
                     "token_type"
                 ],
                 "example": {
-                    "application/json": {
-                        "access_token": "1222a2997d37245fe0a24ea72bdc775442ec2a22ca0abe27211bb04f8e906d08",
-                        "token_type": "bearer",
-                        "expires_in": 7200,
-                        "refresh_token": "a908c03a9df2c7c07971ca5382c652ead2c54bf28e7a51aa54807a052e65a264",
-                        "created_at": "1434535004"
-                    }
+                    "access_token": "1222a2997d37245fe0a24ea72bdc775442ec2a22ca0abe27211bb04f8e906d08",
+                    "token_type": "bearer",
+                    "expires_in": 7200,
+                    "refresh_token": "a908c03a9df2c7c07971ca5382c652ead2c54bf28e7a51aa54807a052e65a264",
+                    "created_at": "1434535004"
                 }
             }
         },
@@ -444,32 +446,12 @@
                     }
                 },
                 "required": [
+                    "id",
                     "email"
                 ],
                 "example": {
-                    "application/json": {
-                        "email": "useruno@here.local"
-                    }
-                }
-            }
-        },
-        "User": {
-            "description": "user details",
-            "schema": {
-                "properties": {
-                    "email": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "nickname",
-                    "email"
-                ],
-                "example": {
-                    "application/json": {
-                        "nickname": "useruno",
-                        "email": "useruno@here.local"
-                    }
+                    "id": 1,
+                    "email": "useruno@here.local"
                 }
             }
         },
@@ -505,15 +487,13 @@
                     "resource_owner_id"
                 ],
                 "example": {
-                    "application/json": {
-                        "resource_owner_id": 2039,
-                        "scopes": [],
-                        "expires_in_seconds": 4482,
-                        "application": {
-                            "uid": null
-                        },
-                        "created_at": 1434545569
-                    }
+                    "resource_owner_id": 2039,
+                    "scopes": [],
+                    "expires_in_seconds": 4482,
+                    "application": {
+                        "uid": null
+                    },
+                    "created_at": 1434545569
                 }
             }
         }
