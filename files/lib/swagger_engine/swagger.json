@@ -48,8 +48,8 @@
                     "201": {
                         "$ref": "#/responses/Registration"
                     },
-                    "401": {
-                        "description": "signup failed"
+                    "422": {
+                        "description": "generic error, see body"
                     }
                 }
             }

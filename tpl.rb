@@ -23,7 +23,7 @@ remove_file "Gemfile"
 run "touch Gemfile"
 
 add_source 'https://rubygems.org'
-gem 'rails', '4.2.3'
+gem 'rails', '4.2.4'
 gem 'therubyracer'
 gem 'passenger-rails'
 gem 'pg'
@@ -195,6 +195,7 @@ remove_file "app/assets/javascripts/application.js"
 create_file "app/assets/javascripts/application.js", application_js
 remove_file "app/assets/stylesheets/application.css"
 copy_file "app/assets/stylesheets/application.scss"
+copy_file "app/publuc/favicon.ico"
 
 ################### application_controller.rb
 
@@ -221,8 +222,8 @@ inside 'config/initializers' do
   append_to_file("assets.rb", "Rails.application.config.assets.precompile += [\"swagger_engine/print.css\", \"swagger_engine/reset.css\"]")
 end
 
-copy_file "app/assets/javascripts/swagger_engine/swagger.json"
-gsub_file "app/assets/javascripts/swagger_engine/swagger.json", "\"host\": \"localhost:3000\"", "\"host\": \"#{host}:#{port}\""
+copy_file "lib/swagger_engine/swagger.json"
+#gsub_file "app/assets/javascripts/swagger_engine/swagger.json", "\"host\": \"localhost:3000\"", "\"host\": \"#{host}:#{port}\""
 
 ################### utility scripts
 
