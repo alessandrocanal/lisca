@@ -55,7 +55,6 @@ gem 'faker'
 gem 'koala'
 gem 'figaro'
 gem 'grape'
-gem 'grape-raketasks'
 gem 'oj'
 gem 'grape-rabl'
 gem 'redis-rails'
@@ -234,6 +233,7 @@ EOF
 create_file "bin/serve", cmd
 chmod 'bin/serve', 775
 
+copy_file "lib/tasks/grape.rake"
 ############################################
 
 after_bundle do
