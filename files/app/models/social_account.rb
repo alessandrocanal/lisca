@@ -20,7 +20,7 @@ class SocialAccount < ActiveRecord::Base
   private
   def fb_api
     return if token.blank?
-    @fb_api ||= (Koala::Facebook::API.new(token, Rails.application.secrets.FB_APP_SECRET) rescue nil)
+    @fb_api ||= (Koala::Facebook::API.new(token, ENV['FB_APP_SECRET']) rescue nil)
   end
 
   def fb_user
