@@ -251,6 +251,8 @@ PORT: "#{port}"
 URL: "http://#{host}:#{port}"
 SECRET_KEY_BASE: "please_generate_one_with_rake_secret_task"
 SECRET_DEVISE: "please_generate_one_with_rake_secret_task"
+FB_APP_ID: "xxx"
+FB_APP_SECRET: "yyy"
 EOF
 
   inside 'config' do
