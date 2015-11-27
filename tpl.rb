@@ -194,7 +194,7 @@ remove_file "app/assets/javascripts/application.js"
 create_file "app/assets/javascripts/application.js", application_js
 remove_file "app/assets/stylesheets/application.css"
 copy_file "app/assets/stylesheets/application.scss"
-copy_file "app/publuc/favicon.ico"
+copy_file "public/favicon.ico"
 
 ################### application_controller.rb
 
