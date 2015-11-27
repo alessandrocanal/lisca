@@ -91,10 +91,6 @@ development:
 test:
   <<: *default
   database: #{app_name}_test
-
-production:
-  <<: *default
-  database: #{app_name}_production
 EOF
 
 inside 'config' do
