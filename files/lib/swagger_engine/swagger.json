@@ -446,11 +446,9 @@
                     }
                 },
                 "required": [
-                    "id",
                     "email"
                 ],
                 "example": {
-                    "id": 1,
                     "email": "useruno@here.local"
                 }
             }
