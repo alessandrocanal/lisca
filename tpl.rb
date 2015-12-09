@@ -143,7 +143,7 @@ inside 'config' do
   - [mailer, 2]
 EOF
 
-  create_file 'sidekiq.tml', config_sidekiq
+  create_file 'sidekiq.yml', config_sidekiq
 
 end
 
