@@ -249,6 +249,7 @@ SECRET_KEY_BASE: "please_generate_one_with_rake_secret_task"
 SECRET_DEVISE: "please_generate_one_with_rake_secret_task"
 FB_APP_ID: "xxx"
 FB_APP_SECRET: "yyy"
+REDIS_URL: "redis://localhost:6379/0/cache"
 EOF
 
   inside 'config' do
