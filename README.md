@@ -30,6 +30,32 @@ rails new thenextbigthing -d postgresql -T -m lisca/tpl.rb
 * _rabl_: json templates
 * _redis-rails_: cache store
 
+###Installation
+```
+$ bundle install
+$ cp config/application.yml.example config/application.yml
+$ cp config/database.yml.example config/database.yml
+```
+Edit `/data/webapp/shared/config/*.yml` files
+
+Use `./bin/rake secret` to generate *SECRET_KEY_BASE* value.
+
+###Development Server
+In a terminal, start local redis server:
+```
+$ redis-server
+```
+
+In another terminal, start sidekiq:
+```
+./bin/sidekiq -C config/sidekiq.yml
+```
+
+Start standalone passenger:
+```
+$ ./bin/serve
+```
+
 ###Deploy with capistrano
 
 * create new git repo and add it:
