@@ -224,7 +224,7 @@ copy_file "lib/swagger_engine/swagger.json"
 
 cmd = <<EOF
 #!/usr/bin/env bash
-grep \"PORT\" config/application.yml|awk '{print $2}'|xargs rails s -p
+grep \"PORT\" config/application.yml|awk '{print $2}'|head -1|xargs rails s -p
 EOF
 create_file "bin/serve", cmd
 chmod 'bin/serve', 775
