@@ -13,22 +13,18 @@ cd ..
 ```
 create new rails app with postgresql db, no test unit and based on Lisca template:
 ```
-rails new thenextbigthing -d postgresql -T -m lisca/tpl.rb
+rails new thenextbigthing --api -d postgresql -T -m lisca/tpl.rb
 ```
 
 ##Features
 
 ###Main Gems
-* _devise_: user management
-* _doorkeeper_: Resource Owner Password Credentials flow
 * _swagger_engine_: api documentation
 * _capistrano_: deploy
-* _sidekiq_: background jobs
 * _rspec_: test
 * _figaro_: config vars
-* _grape_: api
-* _rabl_: json templates
 * _redis-rails_: cache store
+* _activeadmin_: cms
 
 ###Installation
 ```
@@ -45,16 +41,10 @@ In a terminal, start local redis server:
 ```
 $ redis-server
 ```
+###activeadmin
+To complete the installation and for the configuration follow the doc http://activeadmin.info/docs/documentation.html
 
-In another terminal, start sidekiq:
-```
-./bin/sidekiq -C config/sidekiq.yml
-```
-
-Start standalone passenger:
-```
-$ ./bin/serve
-```
+###
 
 ###Deploy with capistrano
 
@@ -96,7 +86,7 @@ Suppose that we are working in `development` environment.
 ```
 
 ###System Requirements
-* _ruby 2.1_
+* _ruby 2.2_
 
 ###Backing Services
 * _postgresql 9.4_
