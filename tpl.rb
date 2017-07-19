@@ -23,27 +23,25 @@ remove_file "Gemfile"
 run "touch Gemfile"
 
 add_source 'https://rubygems.org'
-gem 'rails', '~> 5.0.1'
-gem 'puma', '~> 3.0'
-gem 'pg', '~> 0.19.0'
-gem 'jbuilder', '~> 2.5'
-gem 'swagger_engine', git: 'https://github.com/batdevis/swagger_engine.git'
+gem 'rails', '~> 5.1.2'
+gem 'puma', '~> 3.9', '>= 3.9.1'
+gem 'pg', '~> 0.21.0'
+#gem 'swagger_engine', git: 'https://github.com/batdevis/swagger_engine.git'
 
 gem 'jwt'
 gem 'figaro'
 gem 'rack-cors'
 
-gem 'activeadmin', github: 'activeadmin'
-gem 'inherited_resources', github: 'activeadmin/inherited_resources'
-gem 'devise', '~> 4.2'
+#gem 'activeadmin', github: 'activeadmin'
+#gem 'inherited_resources', github: 'activeadmin/inherited_resources'
+#gem 'activeadmin-globalize', '~> 1.0.0.pre', github: 'fabn/activeadmin-globalize', branch: 'develop'
 
 gem 'globalize', github: 'globalize/globalize'
-gem 'activemodel-serializers-xml'
-gem 'activeadmin-globalize', '~> 1.0.0.pre', github: 'fabn/activeadmin-globalize', branch: 'develop'
+gem 'active_model_serializers', '~> 0.10.6'
 
 gem 'delayed_job_active_record'
 gem 'daemons'
-gem 'aasm', '~> 4.11', '>= 4.11.1'
+gem 'aasm', '~> 4.12', '>= 4.12.1'
 gem 'redis', '~> 3.3', '>= 3.3.3'
 
 gem_group :development, :test do
@@ -57,10 +55,10 @@ gem_group :development do
 end
 
 gem_group :test do
-  gem 'faker', '~> 1.7', '>= 1.7.2'
-  gem 'rspec-rails', '~> 3.5', '>= 3.5.2'
+  gem 'faker', '~> 1.8', '>= 1.8.4'
+  gem 'rspec-rails', '~> 3.6'
   gem 'factory_girl_rails'
-  gem 'shoulda-matchers', '~> 3.1', '>= 3.1.1'
+  gem 'shoulda-matchers', '~> 3.1', '>= 3.1.2'
   gem 'shoulda-callback-matchers', '~> 1.1', '>= 1.1.4'
   gem 'rails-controller-testing'
 end
@@ -112,16 +110,178 @@ inside 'config/environments' do
   end
 end
 
+################### config/application.rb
+application do
+  "config.generators do |g|
+    g.test_framework :rspec
+  end"
+end
+
 ################### application_controller.rb
 
 application_controller = <<EOF
-class ApplicationController < ActionController::Base
-  attr_reader :current_user
+class ApplicationController < ActionController::API
+  rescue_from ActiveRecord::RecordInvalid, with: :render_unprocessable_entity_response
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found_response
+  rescue_from AASM::InvalidTransition, with: :render_invalid_transition
+
+  def render_unprocessable_entity_response(exception)
+    render json: {
+      message: "Validation Failed",
+      errors: ValidationErrorsSerializer.new(exception.record).serialize
+    }, status: :unprocessable_entity
+  end
+
+  def render_not_found_response
+    render json: { message: "Not found", errors: [{code: "not_found"}] }, status: :not_found
+  end
+
+  def render_invalid_transition
+    render json: { message: "Invalid state transition", errors: [{code: "invalid_transition"}] }, status: :unprocessable_entity
+  end
+
+  def render_error_response(exception)
+    render json: { message: exception.message, errors: [{code: exception.code}] }, status: exception.http_status
+  end
+
+
+  protected
+  def authenticate_request!
+    unless user_id_in_token?
+      render json: { errors: ['Unauthorized'] }, status: :unauthorized
+      return
+    end
+    # token ok, check se ho l'utente, se non ce l'ho lo registro
+    u = User.find_by(uid: auth_token[:user_id])
+    if u.blank?
+      lang = request.headers['Accept-Language'].present? ? request.headers['Accept-Language'] : "it"
+      #unlock_code = rand(6 ** 6).to_s.rjust(5,'0')
+      cu = User.create({uid: auth_token[:user_id], email: auth_token[:email], prefered_language: lang[0,2] })
+      #render json: { errors: ['User is blocked'] }, status: :unauthorized
+      cu.reload
+      @current_user = cu
+    else
+      @current_user = u
+    #  unlock_code = params[:data][:code] rescue nil
+    #  render json: { errors: ['User is blocked'] }, status: :unauthorized if u.locked && unlock_code.nil?
+    end
+
+  rescue JWT::VerificationError, JWT::DecodeError
+    render json: { errors: ['Unauthorized'] }, status: :unauthorized
+  end
+
+  private
+  def http_token
+    @http_token ||= if request.headers['Authorization'].present?
+      request.headers['Authorization'].split(' ').last
+    end
+  end
+
+  def auth_token
+    @auth_token ||= JsonWebToken.decode(http_token)
+  end
+
+  def user_id_in_token?
+    http_token && auth_token && auth_token[:user_id]
+  end
 end
 EOF
 
 remove_file "app/controllers/application_controller.rb"
 create_file "app/controllers/application_controller.rb", application_controller
+
+################### app/lib/json_web_token.rb
+json_web_token = <<EOF
+class JsonWebToken
+  def self.encode(payload)
+    #JWT.encode(payload, Rails.application.secrets.secret_key_base)
+  end
+
+  def self.decode(token)
+    return HashWithIndifferentAccess.new(JWT.decode(token, ENV['JWT_SECRET_KEY'], false)[0])
+  rescue Exception => e
+    nil
+  end
+end
+EOF
+create_file "app/lib/json_web_token.rb", json_web_token
+
+################### app/lib/validation_error_serializer.rb
+validation_error_serializer = <<EOF
+class ValidationErrorSerializer
+
+  def initialize(record, field, details)
+    @record = record
+    @field = field
+    @details = details
+  end
+
+  def serialize
+    {
+      resource: resource,
+      field: field,
+      code: code
+    }
+  end
+
+  private
+
+  def resource
+    I18n.t(
+      underscored_resource_name,
+      scope: [:resources],
+      locale: :api,
+      default: @record.class.to_s
+    )
+  end
+
+  def field
+     I18n.t(
+      @field,
+      scope: [:fields, underscored_resource_name],
+      locale: :api,
+      default: @field.to_s
+    )
+  end
+
+  def code
+    I18n.t(
+      @details[:error],
+      scope: [:errors, :codes],
+      locale: :api,
+      default: @details[:error].to_s
+    )
+  end
+
+  def underscored_resource_name
+    @record.class.to_s.gsub('::', '').underscore
+  end
+end
+EOF
+
+create_file "app/lib/validation_error_serializer.rb", validation_error_serializer
+
+################### app/lib/validation_errors_serializer.rb
+validation_errors_serializer = <<EOF
+class ValidationErrorsSerializer
+
+  attr_reader :record
+
+  def initialize(record)
+    @record = record
+  end
+
+  def serialize
+    record.errors.details.map do |field, details|
+      details.map do |error_details|
+        ValidationErrorSerializer.new(record, field, error_details).serialize
+      end
+    end.flatten
+  end
+end
+EOF
+
+create_file "app/lib/validation_errors_serializer.rb", validation_errors_serializer
 
 ################### some questions, please
 
@@ -133,7 +293,7 @@ port = "3000" if port.blank?
 
 ################### swagger_engine
 
-copy_file "lib/swagger_engine/swagger.json"
+#copy_file "lib/swagger_engine/swagger.json"
 #gsub_file "app/assets/javascripts/swagger_engine/swagger.json", "\"host\": \"localhost:3000\"", "\"host\": \"#{host}:#{port}\""
 
 ################### utility scripts
@@ -185,6 +345,13 @@ EOF
     create_file "secrets.yml", config_secrets
   end
 
+################## core model
+
+  #run "./bin/rails generate model user"
+  generate :model, "user email:string uuid:string"
+  generate :serializer, "user"
+  generate :model, "item name:string user:references"
+  generate :serializer, "item"
 ################## rspec
 
   remove_dir "test"
@@ -193,90 +360,34 @@ EOF
   run "bundle binstubs rspec-core"
 
 
-################## swagger api-docs
-
-  route "mount SwaggerEngine::Engine, at: '/api-docs'"
-
-################## ping api
+################## api
 
   inside "app/controllers" do
     copy_file "ping_controller.rb"
   end
 
-  route "get 'ping', to: 'ping#index', defaults: { format: 'json' }"
-
-  inside "spec/api" do
-    copy_file "ping_request.rb"
+  inside "app/controllers/api/v1" do
+    copy_file "api_controller.rb"
+    copy_file "users_controller.rb"
+    copy_file "items_controller.rb"
   end
+
+  route "get 'ping', to: 'ping#index', defaults: { format: 'json' }"
+  route "scope module: 'api' do
+      namespace :v1 do
+        resources :users, only: [:index]
+        resources :items
+      end
+    end"
 
 ################## home api
 
-  inside "app/controllers" do
-    copy_file "home_controller.rb"
-  end
-
-  inside "app/views" do
-    copy_file "home/index.html.erb"
-    copy_file "home/fb.html.erb"
-  end
-
-  route "get 'home/fb', to: 'home#fb'"
-  route "root 'home#index', via: :all"
 
   gsub_file("config/routes.rb", /^\s*#.*\n/, '')
 
-################## capistrano
-
-  run "bundle exec cap install STAGES=development,staging,production"
-
-  gsub_file("Capfile",
-    "# require 'capistrano/bundler'",
-    "require 'capistrano/bundler'"
-  )
-  gsub_file("Capfile",
-    "# require 'capistrano/rails/assets'",
-    "require 'capistrano/rails/assets'"
-  )
-  gsub_file("Capfile",
-    "# require 'capistrano/rails/migrations'",
-    "require 'capistrano/rails/migrations'"
-  )
-  insert_into_file("Capfile", "require 'capistrano/touch-linked-files'\n", before: "# Load custom tasks from")
-
-  inside "config" do
-
-    gsub_file("deploy.rb",
-      "set :application, 'my_app_name'",
-      "set :application, '#{app_name}'"
-    )
-
-    insert_into_file("deploy.rb",
-      "set :rails_env, 'production'\n",
-      after: "# set :deploy_to, '/var/www/my_app_name'\n"
-    )
-
-    gsub_file("deploy.rb",
-      "# set :deploy_to, '/var/www/my_app_name'",
-      "set :deploy_to, '/data/webapp'"
-    )
-    gsub_file("deploy.rb",
-      "# set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/secrets.yml')",
-      "set :linked_files, fetch(:linked_files, []).push('config/database.yml', 'config/application.yml')"
-    )
-    gsub_file("deploy.rb",
-      "# set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')",
-      "set :linked_dirs, fetch(:linked_dirs, []).push('log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'vendor/bundle', 'public/system')"
-    )
-=begin
-    insert_into_file("deploy/development.rb",
-      "set :branch, fetch(:branch, 'development')\n\n",
-      before: "# role-based syntax\n"
-    )
-=end
-  end
-
+  rake "db:migrate"
 ################## git
   git :init
-  git add: "."
-  git commit: "-a -m 'Initial commit by Lisca template'"
+  #git add: "."
+  #git commit: "-a -m 'Initial commit by Lisca template'"
 end

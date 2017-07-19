@@ -1,0 +1,4 @@
+v0.2.0
+- Lib to manage firebase token
+- No more RABL, road to ActiveRecord::Serializer
+- errors management
